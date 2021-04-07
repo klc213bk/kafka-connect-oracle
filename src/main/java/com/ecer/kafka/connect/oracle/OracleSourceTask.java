@@ -126,6 +126,9 @@ public class OracleSourceTask extends SourceTask {
       }
       logMinerStartScr=logMinerStartScr+(oraDeSupportCM ? logMinerOptionsDeSupportCM : logMinerOptions)+") \n; end;";
       //logMinerStartScr=logMinerStartScr+logMinerOptions+") \n; end;";
+      
+      log.info(">>>logMinerStartScr={}", logMinerStartScr);
+      
       logMinerStartStmt=dbConn.prepareCall(logMinerStartScr);
       Map<String,Object> offset = context.offsetStorageReader().offset(Collections.singletonMap(LOG_MINER_OFFSET_FIELD, dbName));
       streamOffsetScn=0L;
@@ -139,7 +142,7 @@ public class OracleSourceTask extends SourceTask {
         streamOffsetCommitScn = (commitScnPositionObject != null) ? Long.parseLong(String.valueOf(commitScnPositionObject)) : 0L;
         streamOffsetRowId = (rowIdPositionObject != null) ? (String) offset.get(ROWID_POSITION_FIELD) : "";
         if (oraDeSupportCM) streamOffsetScn = streamOffsetCommitScn;
-        log.info("Offset values , scn:{},commitscn:{},rowid:{}",streamOffsetScn,streamOffsetCommitScn,streamOffsetRowId);        
+        log.info(">>>Offset values , scn:{},commitscn:{},rowid:{}",streamOffsetScn,streamOffsetCommitScn,streamOffsetRowId);        
       }      
 
       if (streamOffsetScn!=0L){
@@ -154,12 +157,12 @@ public class OracleSourceTask extends SourceTask {
           }
           lastScnFirstPosRSet.close();
           lastScnFirstPosPs.close();
-          log.info("Captured last SCN has first position:{}",streamOffsetScn);
+          log.info(">>>Captured last SCN has first position:{}",streamOffsetScn);
         }
       }
       
       if (!startSCN.equals("")){
-        log.info("Resetting offset with specified start SCN:{}",startSCN);
+        log.info(">>>Resetting offset with specified start SCN:{}",startSCN);
         streamOffsetScn=Long.parseLong(startSCN);
         //streamOffsetScn-=1;
         skipRecord=false;
@@ -242,7 +245,7 @@ public class OracleSourceTask extends SourceTask {
             if ((scn.equals(streamOffsetCtrl))&&(commitScn.equals(streamOffsetCommitScn))&&(rowId.equals(streamOffsetRowId))&&(!contSF)){
               skipRecord=false;
             }
-            log.info("Skipping data with scn :{} Commit Scn :{} Rowid :{}",scn,commitScn,rowId);
+            log.info(">>>Skipping data with scn :{} Commit Scn :{} Rowid :{}",scn,commitScn,rowId);
             continue;
           }
           //log.info("Data :"+scn+" Commit Scn :"+commitScn);
@@ -266,7 +269,10 @@ public class OracleSourceTask extends SourceTask {
           Timestamp timeStamp=logMinerData.getTimestamp(TIMESTAMP_FIELD);
 
           Data row = new Data(scn, segOwner, segName, sqlRedo,timeStamp,operation);
-          topic = config.getTopic().equals("") ? (config.getDbNameAlias()+DOT+row.getSegOwner()+DOT+(operation.equals(OPERATION_DDL) ? DDL_TOPIC_POSTFIX : segName)).toUpperCase() : topic;
+//          topic = config.getTopic().equals("") ? (config.getDbNameAlias()+DOT+row.getSegOwner()+DOT+(operation.equals(OPERATION_DDL) ? DDL_TOPIC_POSTFIX : segName)).toUpperCase() : topic;
+          topic = config.getTopic().equals("") ? ("etl"+DOT+row.getSegOwner()+DOT+(operation.equals(OPERATION_DDL) ? DDL_TOPIC_POSTFIX : segName)).toUpperCase() : topic;
+          topic = topic.toLowerCase();
+          
           //log.info(String.format("Fetched %s rows from database %s ",ix,config.getDbNameAlias())+" "+row.getTimeStamp()+" "+row.getSegName()+" "+row.getScn()+" "+commitScn);
           if (ix % 100 == 0) log.info(String.format("Fetched %s rows from database %s ",ix,config.getDbNameAlias())+" "+row.getTimeStamp());
           dataSchemaStruct = utils.createDataSchema(segOwner, segName, sqlRedo,operation); 

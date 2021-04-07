@@ -31,6 +31,7 @@ import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DDL;
 import java.net.ConnectException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -167,8 +168,11 @@ public class OracleSourceConnectorUtils{
       }
       mineTableCols.setString(ConnectorSQL.PARAMETER_OWNER, owner);
       mineTableCols.setString(ConnectorSQL.PARAMETER_TABLE_NAME, tableName);*/
+      
       log.warn(">>>mineTableColsSql={}", mineTableColsSql);
+      
       mineTableCols = dbConn.prepareCall(mineTableColsSql);
+
       mineTableColsResultSet=mineTableCols.executeQuery();
       if (!mineTableColsResultSet.isBeforeFirst()) {
     	  // TODO: consider throwing up here, or an NPE will be thrown in OracleSourceTask.poll()
