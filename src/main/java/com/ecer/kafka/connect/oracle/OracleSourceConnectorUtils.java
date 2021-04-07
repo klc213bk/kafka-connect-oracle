@@ -151,7 +151,7 @@ public class OracleSourceConnectorUtils{
     }
 
     protected void loadTable(String owner,String tableName,String operation) throws SQLException{
-      log.info("Getting dictionary details for table : {}",tableName);
+      log.info(">>>Getting dictionary details for table : {}",tableName);
       //SchemaBuilder dataSchemaBuiler = SchemaBuilder.struct().name((config.getDbNameAlias()+DOT+owner+DOT+tableName+DOT+"Value").toLowerCase());
       SchemaBuilder dataSchemaBuiler = SchemaBuilder.struct().name("value");
       String mineTableColsSql=OracleConnectorSQL.TABLE_WITH_COLS;
@@ -167,11 +167,12 @@ public class OracleSourceConnectorUtils{
       }
       mineTableCols.setString(ConnectorSQL.PARAMETER_OWNER, owner);
       mineTableCols.setString(ConnectorSQL.PARAMETER_TABLE_NAME, tableName);*/
+      log.warn(">>>mineTableColsSql={}", mineTableColsSql);
       mineTableCols = dbConn.prepareCall(mineTableColsSql);
       mineTableColsResultSet=mineTableCols.executeQuery();
       if (!mineTableColsResultSet.isBeforeFirst()) {
     	  // TODO: consider throwing up here, or an NPE will be thrown in OracleSourceTask.poll()
-          log.warn("mineTableCols has no results for {}.{}", owner, tableName);
+          log.warn(">>>mineTableCols has no results for {}.{}", owner, tableName);
       }
       while(mineTableColsResultSet.next()){
         String columnName = mineTableColsResultSet.getString(COLUMN_NAME_FIELD);

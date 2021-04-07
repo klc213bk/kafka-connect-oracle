@@ -110,15 +110,15 @@ public class OracleSourceTask extends SourceTask {
     dbName=config.getDbNameAlias();
     parseDmlData=config.getParseDmlData();
     String startSCN = config.getStartScn();
-    log.info("Oracle Kafka Connector is starting on {}",config.getDbNameAlias());
+    log.info(">>>Oracle Kafka Connector is starting on {}",config.getDbNameAlias());
     try {      
       dbConn = new OracleConnection().connect(config);
       utils = new OracleSourceConnectorUtils(dbConn, config);
       int dbVersion = utils.getDbVersion();
-      log.info("Connected to database version {}",dbVersion);
+      log.info(">>>Connected to database version {}",dbVersion);
       logMinerSelectSql = utils.getLogMinerSelectSql();
 
-      log.info("Starting LogMiner Session");
+      log.info(">>>Starting LogMiner Session");
       if (dbVersion>=ORA_DESUPPORT_CM_VERSION){
         log.info("Db Version is {} and CONTINOUS_MINE is desupported",dbVersion);
         oraDeSupportCM=true;
@@ -166,7 +166,7 @@ public class OracleSourceTask extends SourceTask {
       }
       
       if (config.getResetOffset()){
-        log.info("Resetting offset with new SCN");
+        log.info(">>>Resetting offset with new SCN");
         streamOffsetScn=0L;
         streamOffsetCommitScn=0L;
         streamOffsetRowId="";        
@@ -181,19 +181,22 @@ public class OracleSourceTask extends SourceTask {
         }
         currentScnResultSet.close();
         currentSCNStmt.close();        
-        log.info("Getting current scn from database {}",streamOffsetScn);
+        log.info(">>>Getting current scn from database {}",streamOffsetScn);
       }
       //streamOffsetScn+=1;
-      log.info("Commit SCN : "+streamOffsetCommitScn);
-      log.info(String.format("Log Miner will start at new position SCN : %s with fetch size : %s", streamOffsetScn,config.getDbFetchSize()));
+      log.info(">>>Commit SCN : "+streamOffsetCommitScn);
+      log.info(String.format(">>>Log Miner will start at new position SCN : %s with fetch size : %s", streamOffsetScn,config.getDbFetchSize()));
       if (!oraDeSupportCM){
       logMinerStartStmt.setLong(1, streamOffsetScn);
       logMinerStartStmt.execute();      
+      
+      log.info(">>>logMinerSelectSql={}", logMinerSelectSql);
       logMinerSelect=dbConn.prepareCall(logMinerSelectSql);
       logMinerSelect.setFetchSize(config.getDbFetchSize());
       logMinerSelect.setLong(1, streamOffsetCommitScn);
       logMinerData=logMinerSelect.executeQuery();
-      log.info("Logminer started successfully");
+      
+      log.info(">>>Logminer started successfully");
       }else{
         //tLogMiner = new Thread(new LogMinerThread(sourceRecordMq,dbConn,streamOffsetScn, logMinerStartStmt,logMinerSelectSql,config.getDbFetchSize(),topic,dbName,utils));        
         tLogMiner = new LogMinerThread(sourceRecordMq,dbConn,streamOffsetScn, logMinerStartStmt,logMinerSelectSql,config.getDbFetchSize(),topic,dbName,utils);
