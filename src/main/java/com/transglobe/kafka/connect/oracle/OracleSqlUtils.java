@@ -1,4 +1,4 @@
-package com.ecer.kafka.connect.oracle;
+package com.transglobe.kafka.connect.oracle;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;

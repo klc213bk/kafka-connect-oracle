@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.ecer.kafka.connect.oracle</groupId>
+    <groupId>com.transglobe.kafka.connect.oracle</groupId>
     <artifactId>kafka-connect-oracle</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
@@ -90,11 +90,5 @@
             </resource>
         </resources>
     </build>
-    <repositories>
-        <repository>
-            <id>confluent</id>
-            <url>http://packages.confluent.io/maven/</url>
-        </repository>
-    </repositories>
 
 </project>

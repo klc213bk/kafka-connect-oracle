@@ -1,4 +1,34 @@
-package com.ecer.kafka.connect.oracle;
+package com.transglobe.kafka.connect.oracle;
+
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.BEFORE_DATA_ROW_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.COMMITSCN_POSITION_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.COMMIT_SCN_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.COMMIT_TIMESTAMP_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.CSF_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DATA_ROW_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DDL_TOPIC_POSTFIX;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DOT;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.LOG_MINER_OFFSET_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_COMMIT;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DDL;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DELETE;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_INSERT;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_ROLLBACK;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_START;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_UPDATE;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.POSITION_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.ROLLBACK_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.ROWID_POSITION_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.ROW_ID_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SCN_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SEG_OWNER_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SQL_REDO_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TABLE_NAME_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TEMPORARY_TABLE;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.THREAD_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TIMESTAMP_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.XID_FIELD;
 
 import java.net.ConnectException;
 import java.sql.CallableStatement;
@@ -17,44 +47,14 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
-import com.ecer.kafka.connect.oracle.models.DMLRow;
-import com.ecer.kafka.connect.oracle.models.DataSchemaStruct;
-import com.ecer.kafka.connect.oracle.models.Transaction;
-
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.BEFORE_DATA_ROW_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.COMMITSCN_POSITION_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.COMMIT_SCN_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.CSF_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DATA_ROW_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DOT;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.LOG_MINER_OFFSET_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.POSITION_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.ROWID_POSITION_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.ROW_ID_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.SCN_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.SEG_OWNER_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.SQL_REDO_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.TABLE_NAME_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.TEMPORARY_TABLE;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.TIMESTAMP_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.COMMIT_TIMESTAMP_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.XID_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.THREAD_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_START;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_COMMIT;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_ROLLBACK;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_INSERT;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_UPDATE;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DELETE;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.ROLLBACK_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DDL;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DDL_TOPIC_POSTFIX;
-
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.transglobe.kafka.connect.oracle.models.DMLRow;
+import com.transglobe.kafka.connect.oracle.models.DataSchemaStruct;
+import com.transglobe.kafka.connect.oracle.models.Transaction;
 
 public class LogMinerThread implements Runnable {
     static final Logger log = LoggerFactory.getLogger(LogMinerThread.class);
