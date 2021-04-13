@@ -187,19 +187,19 @@ public class OracleSourceTask extends SourceTask {
         log.info(">>>Getting current scn from database {}",streamOffsetScn);
       }
       //streamOffsetScn+=1;
-      log.info(">>>Commit SCN : "+streamOffsetCommitScn);
+//      log.info(">>>Commit SCN : "+streamOffsetCommitScn);
       log.info(String.format(">>>Log Miner will start at new position SCN : %s with fetch size : %s", streamOffsetScn,config.getDbFetchSize()));
       if (!oraDeSupportCM){
       logMinerStartStmt.setLong(1, streamOffsetScn);
       logMinerStartStmt.execute();      
       
-      log.info(">>>logMinerSelectSql={}", logMinerSelectSql);
+//      log.info(">>>logMinerSelectSql={}", logMinerSelectSql);
       logMinerSelect=dbConn.prepareCall(logMinerSelectSql);
       logMinerSelect.setFetchSize(config.getDbFetchSize());
       logMinerSelect.setLong(1, streamOffsetCommitScn);
       logMinerData=logMinerSelect.executeQuery();
       
-      log.info(">>>Logminer started successfully");
+//      log.info(">>>Logminer started successfully");
       }else{
         //tLogMiner = new Thread(new LogMinerThread(sourceRecordMq,dbConn,streamOffsetScn, logMinerStartStmt,logMinerSelectSql,config.getDbFetchSize(),topic,dbName,utils));        
         tLogMiner = new LogMinerThread(sourceRecordMq,dbConn,streamOffsetScn, logMinerStartStmt,logMinerSelectSql,config.getDbFetchSize(),topic,dbName,utils);

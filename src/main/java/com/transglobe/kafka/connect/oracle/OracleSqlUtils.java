@@ -29,10 +29,10 @@ public class OracleSqlUtils {
         String sqlBase = OracleConnectorSQL.LOGMINER_LOG_FILES_LOG$;
         sqlBase = sqlBase.replace(":vcurrscn",currScn.toString());
         PreparedStatement ps = conn.prepareCall(sqlBase);
-        log.info("################################# Scanning Log Files for SCN :{}",currScn);
+   //     log.info("################################# Scanning Log Files for SCN :{}",currScn);
         ResultSet rs = ps.executeQuery();
         while (rs.next()){
-            log.info("Base log files {}",rs.getString("NAME"));
+    //        log.info("Base log files {}",rs.getString("NAME"));
             logFilesBase.add(rs.getString("NAME"));
         }
         rs.close();
@@ -41,7 +41,7 @@ public class OracleSqlUtils {
         ps = conn.prepareCall(OracleConnectorSQL.LOGMINER_LOG_FILES_LOGMNR$);
         rs = ps.executeQuery();
         while (rs.next()){
-            log.info("logmnr_logs log files {}",rs.getString("NAME"));
+    //        log.info("logmnr_logs log files {}",rs.getString("NAME"));
             logFilesLogmnr.add(rs.getString("NAME"));
         }
 
@@ -49,7 +49,7 @@ public class OracleSqlUtils {
             ListIterator<String> iterator = logFilesBase.listIterator();
             while (iterator.hasNext()){
                 String logFile = iterator.next();                
-                log.info("Log file will be mined {}",logFile);
+       //         log.info("Log file will be mined {}",logFile);
                 if (i==0){
                     option = "DBMS_LOGMNR.NEW";
                     i++;
@@ -59,7 +59,7 @@ public class OracleSqlUtils {
                 executeCallableStmt(conn, OracleConnectorSQL.LOGMINER_ADD_LOGFILE.replace(":logfilename",logFile).replace(":option", option));                
             }
         }
-        log.info("#################################");
+    //    log.info("#################################");
         rs.close();
         ps.close();        
         return i>0 ? true : false;        
@@ -71,8 +71,8 @@ public class OracleSqlUtils {
         List<String> logFiles=null;
         String pSql = sql.replace(":vcurrscn",currScn.toString());        
         PreparedStatement ps = conn.prepareCall(pSql);
-        log.info(pSql);
-        log.info("################################# Scanning Log Files for SCN :{}",currScn);
+    //    log.info(pSql);
+   //     log.info("################################# Scanning Log Files for SCN :{}",currScn);
         ResultSet rs = ps.executeQuery();
         while (rs.next()){
             logFiles = Arrays.asList(rs.getString("NAME").split(" "));
@@ -81,7 +81,7 @@ public class OracleSqlUtils {
             ListIterator<String> iterator = logFiles.listIterator();
             while (iterator.hasNext()){
                 String logFile = iterator.next();
-                log.info("Log file will be mined {}",logFile);
+     //           log.info("Log file will be mined {}",logFile);
                 if (i==0){
                     option = "DBMS_LOGMNR.NEW";
                     i++;
@@ -92,7 +92,7 @@ public class OracleSqlUtils {
             }
         }
 
-        log.info("#################################");
+  //      log.info("#################################");
         rs.close();
         ps.close();
 

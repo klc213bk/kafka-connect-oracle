@@ -152,7 +152,7 @@ public class OracleSourceConnectorUtils{
     }
 
     protected void loadTable(String owner,String tableName,String operation) throws SQLException{
-      log.info(">>>Getting dictionary details for table : {}",tableName);
+   //   log.info(">>>Getting dictionary details for table : {}",tableName);
       //SchemaBuilder dataSchemaBuiler = SchemaBuilder.struct().name((config.getDbNameAlias()+DOT+owner+DOT+tableName+DOT+"Value").toLowerCase());
       SchemaBuilder dataSchemaBuiler = SchemaBuilder.struct().name("value");
       String mineTableColsSql=OracleConnectorSQL.TABLE_WITH_COLS;
@@ -169,7 +169,7 @@ public class OracleSourceConnectorUtils{
       mineTableCols.setString(ConnectorSQL.PARAMETER_OWNER, owner);
       mineTableCols.setString(ConnectorSQL.PARAMETER_TABLE_NAME, tableName);*/
       
-      log.warn(">>>mineTableColsSql={}", mineTableColsSql);
+    //  log.warn(">>>mineTableColsSql={}", mineTableColsSql);
       
       mineTableCols = dbConn.prepareCall(mineTableColsSql);
 
@@ -369,7 +369,7 @@ public class OracleSourceConnectorUtils{
       String preSchemaName = (config.getDbNameAlias()+DOT+owner+DOT+tableName+DOT+"row").toLowerCase();      
       if (tableName!=null && operation.equals(OPERATION_DDL)&&tableSchema.containsKey(tableKey)){
         tableSchema.remove(tableKey);
-        log.info("Dictionary details of Segment {} has been changed , removed from internal dictionary table",tableKey);  
+      //  log.info("Dictionary details of Segment {} has been changed , removed from internal dictionary table",tableKey);  
       }       
       if (config.getParseDmlData() && (!operation.equals(OPERATION_DDL))){
         if (!tableSchema.containsKey(tableKey)){
