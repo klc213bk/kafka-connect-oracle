@@ -115,6 +115,7 @@ public class OracleSourceTask extends SourceTask {
       dbConn = new OracleConnection().connect(config);
       utils = new OracleSourceConnectorUtils(dbConn, config);
       int dbVersion = utils.getDbVersion();
+      dbVersion = 190001;
       log.info(">>>Connected to database version {}",dbVersion);
       logMinerSelectSql = utils.getLogMinerSelectSql();
 

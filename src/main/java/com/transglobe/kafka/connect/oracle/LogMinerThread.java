@@ -115,6 +115,7 @@ public class LogMinerThread implements Runnable {
                 logMinerStartStmt.setLong(1, streamOffsetScn);
                 logMinerStartStmt.execute();
               }
+              log.info(">>>>> logMinerSelectSql:{}", logMinerSelectSql);
               logMinerSelect=dbConn.prepareCall(logMinerSelectSql);
               logMinerSelect.setFetchSize(dbFetchSize);
               logMinerSelect.setLong(1, streamOffsetScn);
@@ -135,6 +136,7 @@ public class LogMinerThread implements Runnable {
           log.info("Logminer started successfully on Thread");
           while(!this.closed && logMinerData.next()){
             try {
+      //      	log.info(">>>>> sequence:{}, RBASQN={}", sequence, logMinerData.getInt("RBASQN"));
               if ((sequence>0)&&(logMinerData.getInt("RBASQN")-sequence)>1){
                 log.error("Captured archive and log files have changed , regetting log files");
                 break;
@@ -147,7 +149,7 @@ public class LogMinerThread implements Runnable {
               Timestamp commitTimeStamp=logMinerData.getTimestamp(COMMIT_TIMESTAMP_FIELD);
               Long commitScn=logMinerData.getLong(COMMIT_SCN_FIELD);
               String rowId=logMinerData.getString(ROW_ID_FIELD);
-              //#log.info(operation+"-"+xid+"-"+scn);
+//              log.info(">>>>>>>"+operation+"-"+xid+"-"+scn);
 
               if (operation.equals(OPERATION_COMMIT)){
                 transaction = trnCollection.get(xid);            
