@@ -1,6 +1,11 @@
 # Kafka Connect Oracle
 
+########################################## Oracle Logminer ################################
+archive log mod : disabled
 
+
+
+########################################## Connector #######################################
 
 http://http://localhost:8083
 =>{"version":"2.7.0","commit":"448719dc99a19793","kafka_cluster_id":"lNaoMMWMQxSN1TDBN_2QHA"}

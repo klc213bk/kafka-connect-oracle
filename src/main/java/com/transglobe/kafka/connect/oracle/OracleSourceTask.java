@@ -115,13 +115,13 @@ public class OracleSourceTask extends SourceTask {
       dbConn = new OracleConnection().connect(config);
       utils = new OracleSourceConnectorUtils(dbConn, config);
       int dbVersion = utils.getDbVersion();
-      dbVersion = 190001;
+
       log.info(">>>Connected to database version {}",dbVersion);
       logMinerSelectSql = utils.getLogMinerSelectSql();
 
       log.info(">>>Starting LogMiner Session");
-      if (dbVersion>=ORA_DESUPPORT_CM_VERSION){
-        log.info("Db Version is {} and CONTINOUS_MINE is desupported",dbVersion);
+      if (dbVersion>=ORA_DESUPPORT_CM_VERSION || !config.isAutomaticArchivalEnabled()){
+        log.info("Db Version is {} and CONTINOUS_MINE is desupported, isAutomaticArchivalEnabled={}",dbVersion, config.isAutomaticArchivalEnabled());
         oraDeSupportCM=true;
         logMinerSelectSql = utils.getLogMinerSelectSqlDeSupportCM();
       }
@@ -230,6 +230,7 @@ public class OracleSourceTask extends SourceTask {
   @Override
   public List<SourceRecord> poll() throws InterruptedException {
     //TODO: Create SourceRecord objects that will be sent the kafka cluster. 
+	  log.info(">>>>>>>>> >>>>>>>>>>>>>>>>>>>>>>>>>>poll(), oraDeSupportCM={}", oraDeSupportCM);  
     String sqlX="";
     try {
       ArrayList<SourceRecord> records = new ArrayList<>();
@@ -296,6 +297,8 @@ public class OracleSourceTask extends SourceTask {
       }else{
         
         records.add(sourceRecordMq.take());
+        log.info(">>>>>>>>> records.add(sourceRecordMq)={}", sourceRecordMq.take());  
+        
         return records;
       }      
       log.info("Logminer stoppped successfully");       
