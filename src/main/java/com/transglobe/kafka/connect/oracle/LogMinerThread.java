@@ -115,7 +115,7 @@ public class LogMinerThread implements Runnable {
                 logMinerStartStmt.setLong(1, streamOffsetScn);
                 logMinerStartStmt.execute();
               }
-              log.info(">>>>> logMinerSelectSql:{}", logMinerSelectSql);
+           //   log.info(">>>>> logMinerSelectSql:{}", logMinerSelectSql);
               logMinerSelect=dbConn.prepareCall(logMinerSelectSql);
               logMinerSelect.setFetchSize(dbFetchSize);
               logMinerSelect.setLong(1, streamOffsetScn);

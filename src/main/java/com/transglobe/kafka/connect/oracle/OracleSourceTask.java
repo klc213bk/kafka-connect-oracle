@@ -120,8 +120,8 @@ public class OracleSourceTask extends SourceTask {
       logMinerSelectSql = utils.getLogMinerSelectSql();
 
       log.info(">>>Starting LogMiner Session");
-      if (dbVersion>=ORA_DESUPPORT_CM_VERSION || !config.isAutomaticArchivalEnabled()){
-        log.info("Db Version is {} and CONTINOUS_MINE is desupported, isAutomaticArchivalEnabled={}",dbVersion, config.isAutomaticArchivalEnabled());
+      if (dbVersion>=ORA_DESUPPORT_CM_VERSION ){
+        log.info("Db Version is {} and CONTINOUS_MINE is desupported",dbVersion);
         oraDeSupportCM=true;
         logMinerSelectSql = utils.getLogMinerSelectSqlDeSupportCM();
       }

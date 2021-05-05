@@ -26,7 +26,6 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
   public static final String TABLE_BLACKLIST = "table.blacklist";
   public static final String DML_TYPES = "dml.types";
   public static final String MAP_UNESCAPED_STRINGS = "map.unescaped.strings";
-  public static final String AUTOMATIC_ARCHIVAL_ENABLED = "automatic.archival.enabled";
   
   public OracleSourceConnectorConfig(ConfigDef config, Map<String, String> parsedConfig) {
     super(config, parsedConfig);
@@ -54,7 +53,6 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
         .define(TABLE_BLACKLIST, Type.STRING, Importance.LOW, "Table will not be mined")
         .define(DML_TYPES, Type.STRING, "", Importance.LOW, "Types of DML to capture, CSV value of INSERT/UPDATE/DELETE")
         .define(MAP_UNESCAPED_STRINGS, Type.BOOLEAN, false, Importance.LOW, "Mapped values for data/before will have unescaped strings")
-        .define(AUTOMATIC_ARCHIVAL_ENABLED,Type.BOOLEAN,Importance.HIGH,"Archive log mode")
         ;
   }
 
@@ -74,5 +72,4 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
   public String getTableBlackList(){return this.getString(TABLE_BLACKLIST);}
   public String getDMLTypes(){return this.getString(DML_TYPES);}
   public Boolean getMapUnescapedStrings(){return this.getBoolean(MAP_UNESCAPED_STRINGS);}
-  public Boolean isAutomaticArchivalEnabled(){return this.getBoolean(AUTOMATIC_ARCHIVAL_ENABLED);}
 }
