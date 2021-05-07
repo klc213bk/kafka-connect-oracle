@@ -11,8 +11,8 @@ import org.apache.kafka.connect.source.SourceConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OracleSourceConnector extends SourceConnector {
-  private static Logger log = LoggerFactory.getLogger(OracleSourceConnector.class);
+public class OracleSourceConnectorNoArchiveLog extends SourceConnector {
+  private static Logger log = LoggerFactory.getLogger(OracleSourceConnectorNoArchiveLog.class);
   private OracleSourceConnectorConfigNoArchiveLog config;      
   @Override
   public String version() {
@@ -38,7 +38,7 @@ public class OracleSourceConnector extends SourceConnector {
   @Override
   public Class<? extends Task> taskClass() {
     //TODO: Return your task implementation.
-    return OracleSourceTask.class;
+    return OracleSourceTaskNoArchiveLog.class;
   }
 
   @Override
@@ -53,8 +53,8 @@ public class OracleSourceConnector extends SourceConnector {
   @Override
   public void stop() {
     //TODO: Do things that are necessary to stop your connector.    
-    if (OracleSourceTask.getThreadConnection()!=null){
-      try {OracleSourceTask.closeDbConn();} catch (Exception e) {} 
+    if (OracleSourceTaskNoArchiveLog.getThreadConnection()!=null){
+      try {OracleSourceTaskNoArchiveLog.closeDbConn();} catch (Exception e) {} 
     }
   }
 

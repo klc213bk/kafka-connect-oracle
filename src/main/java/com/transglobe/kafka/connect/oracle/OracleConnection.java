@@ -17,4 +17,10 @@ public class OracleConnection{
             config.getDbUser(),
             config.getDbUserPassword());
     }
+    public Connection connect(OracleSourceConnectorConfigNoArchiveLog config) throws SQLException{
+        return DriverManager.getConnection(
+            "jdbc:oracle:thin:@"+config.getDbHostName()+":"+config.getDbPort()+"/"+config.getDbName(),
+            config.getDbUser(),
+            config.getDbUserPassword());
+    }
 }

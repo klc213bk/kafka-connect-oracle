@@ -1,4 +1,4 @@
-CREATE OR REPLACE PROCEDURE LOGMINER_NOARCHIVE_SP
+create or replace PROCEDURE         LOGMINER_NOARCHIVE_SP
 (
   i_scn NUMBER
   , i_table_whilelist VARCHAR2
@@ -24,7 +24,7 @@ BEGIN
   select current_scn into v_scn from v$database;
   DBMS_OUTPUT.PUT_LINE('current_scn:' || v_scn);
   
-  if (i_scn is null) then
+  if (i_scn is null or i_scn = 0) then
     select current_scn into v_scn from v$database;
   else 
     v_scn := i_scn;
@@ -97,8 +97,8 @@ BEGIN
     
     
   OPEN o_recordset FOR
-      SELECT scn, cscn, COMMIT_SCN, timestamp, COMMIT_TIMESTAMP
-      , operation_code, operation,seg_owner, table_name , row_id, sql_redo 
+      SELECT SCN, COMMIT_SCN, TIMESTAMP, COMMIT_TIMESTAMP
+      , OPERATION_CODE, OPERATION,SEG_OWNER, TABLE_NAME , ROW_ID, SQL_REDO 
       FROM  v$logmnr_contents  
       WHERE OPERATION_CODE in (1,2,3,5) and scn > v_scn
       and 
