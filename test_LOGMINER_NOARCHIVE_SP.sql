@@ -1,4 +1,4 @@
-SET SERVEROUTPUT ON SIZE 1000000
+SET SERVEROUTPUT ON ;
 DECLARE
   l_cursor  SYS_REFCURSOR;
   scn NUMBER;
@@ -12,21 +12,25 @@ DECLARE
   table_name VARCHAR2(100); 
   sql_redo VARCHAR2(4000);
   row_id  VARCHAR2(18);
-       
+  o_current_scn NUMBER;     
 BEGIN
 
-  LOGMINER_NOARCHIVE_SP (i_scn    => 7940296591377,
-  i_table_whilelist => 'LS_EBAO.TEST_T_ADDRESS, TEST_T_CONTACT_BENE, TEST_T_INSURED_LIST, TEST_T_POLICY_HOLDER',
+  LOGMINER_NOARCHIVE_SP (i_scn    => 2814544,
+  i_commit_scn    => 2814544,
+  i_table_whilelist => 'PMUSER.T_POLICY_HOLDER,PMUSER.T_INSURED_LIST,PMUSER.T_CONTRACT_BENE,PMUSER.T_ADDRESS',
+  o_current_scn => o_current_scn,
               o_recordset => l_cursor);
+  
+  DBMS_OUTPUT.PUT_LINE('o_current_scn:' || o_current_scn);
   
   LOOP 
     FETCH l_cursor
-    INTO  scn, cscn, COMMIT_SCN, timestamp, COMMIT_TIMESTAMP
+    INTO  scn, COMMIT_SCN, timestamp, COMMIT_TIMESTAMP
       , operation_code, operation,seg_owner, table_name ,row_id, sql_redo;
     
     EXIT WHEN l_cursor%NOTFOUND;
     
-    DBMS_OUTPUT.PUT_LINE(scn || ' | ' || cscn || ' | ' || COMMIT_SCN 
+    DBMS_OUTPUT.PUT_LINE(scn || ' | ' || COMMIT_SCN 
     || ' | ' || to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') || ' | ' || to_char(COMMIT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS') || ' | ' || operation_code || ' | ' || operation
     || ' | ' || seg_owner || ' | ' || table_name  || ' | ' || row_id || ' | ' || sql_redo);
   END LOOP;    

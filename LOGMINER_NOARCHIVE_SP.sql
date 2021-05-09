@@ -1,11 +1,14 @@
 create or replace PROCEDURE         LOGMINER_NOARCHIVE_SP
 (
   i_scn NUMBER
+  , i_commit_scn NUMBER
   , i_table_whilelist VARCHAR2
+  , o_current_scn OUT NUMBER
   , o_recordset OUT SYS_REFCURSOR
 ) AS 
 
   v_scn NUMBER;
+  v_commit_scn NUMBER;
   v_min_first_change# NUMBER;
   v_group NUMBER := 0;
   v_index NUMBER := 0;
@@ -16,24 +19,28 @@ create or replace PROCEDURE         LOGMINER_NOARCHIVE_SP
   
   e_invalid_input_scn EXCEPTION;
 BEGIN
-  DBMS_OUTPUT.PUT_LINE('input_scn:' || i_scn);
+  DBMS_OUTPUT.PUT_LINE('input_scn:' || i_scn || ',input commit scn:' || i_commit_scn);
   
   
   v_table_whilelist := i_table_whilelist;
    
-  select current_scn into v_scn from v$database;
-  DBMS_OUTPUT.PUT_LINE('current_scn:' || v_scn);
+  select current_scn into o_current_scn from v$database;
+  DBMS_OUTPUT.PUT_LINE(' sp o_current_scn:' || o_current_scn);
+  
   
   if (i_scn is null or i_scn = 0) then
-    select current_scn into v_scn from v$database;
+    v_scn := o_current_scn;
+  elsif (i_commit_scn is null or i_commit_scn = 0) then
+    v_commit_scn := o_current_scn;
   else 
     v_scn := i_scn;
+    v_commit_scn := i_commit_scn;
   end if;
-  DBMS_OUTPUT.PUT_LINE('scn:' || v_scn);
+  DBMS_OUTPUT.PUT_LINE('v_scn:' || v_scn || ', v_commit_scn:' || v_commit_scn);
   
   select min(first_change#) into v_min_first_change# from v$log;
   if v_scn < v_min_first_change# then
-    raise e_invalid_input_scn;
+    v_scn := v_min_first_change#;
   end if;
   
   v_index := 0;
@@ -99,16 +106,15 @@ BEGIN
   OPEN o_recordset FOR
       SELECT SCN, COMMIT_SCN, TIMESTAMP, COMMIT_TIMESTAMP
       , OPERATION_CODE, OPERATION,SEG_OWNER, TABLE_NAME , ROW_ID, SQL_REDO 
-      FROM  v$logmnr_contents  
-      WHERE OPERATION_CODE in (1,2,3,5) and scn > v_scn
-      and 
-       (seg_owner || '.' || table_name)
-       in (select regexp_substr(v_table_whilelist,'[^,]+', 1, level) from dual
-       connect by regexp_substr(v_table_whilelist, '[^,]+', 1, level) is not null)
-      order by scn 
-  --          in ('LS_EBAO.TEST_T_ADDRESS', 'TEST_T_CONTACT_BENE', 'TEST_T_INSURED_LIST', 'TEST_T_POLICY_HOLDER')
-  --      or (seg_owner='LS_EBAO' and table_name = 'TEST_T_ADDRESS')
-        
+      FROM  v$logmnr_contents
+      WHERE --(OPERATION_CODE = 5 and SCN >  ) or 
+        (OPERATION_CODE in (1,2,3) and COMMIT_SCN >= v_commit_scn and COMMIT_SCN < o_current_scn
+          and 
+           (seg_owner || '.' || table_name)
+           in (select regexp_substr(v_table_whilelist,'[^,]+', 1, level) from dual
+           connect by regexp_substr(v_table_whilelist, '[^,]+', 1, level) is not null)
+        )
+        order by scn  
      ;
 
 /*
