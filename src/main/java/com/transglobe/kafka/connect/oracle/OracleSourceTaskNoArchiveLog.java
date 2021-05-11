@@ -212,7 +212,6 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 		} catch (Exception e) {
 			log.error(ExceptionUtils.getStackTrace(e));
 		}  finally {
-			log.info(">>>>>>>>> finally close resultset and statement");
 			try {
 				if (resultSet != null) resultSet.close();
 				if (cstmt != null) cstmt.close();
