@@ -109,7 +109,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 	public List<SourceRecord> poll() throws InterruptedException {
 		log.info(">>>>>>>>> poll() sleep 2 secs");    
 		Thread.sleep(2000);
-		
+
 		ArrayList<SourceRecord> records = new ArrayList<>();
 		CallableStatement cstmt = null;
 		ResultSet resultSet = null;
@@ -183,14 +183,14 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 				Schema schema = dataSchemaStruct.getDmlRowSchema();
 				Struct struct = setValueV2(row, dataSchemaStruct);
-//				log.info(">>>>>>>>> sourcePartition={}", sourcePartition);   
-//				log.info(">>>>>>>>> sourceOffset={}", sourceOffset); 
-//				log.info(">>>>>>>>> topic={}", topic); 
-//				log.info(">>>>>>>>> schema={}", schema); 
-//				log.info(">>>>>>>>> struct={}", struct); 
+				//				log.info(">>>>>>>>> sourcePartition={}", sourcePartition);   
+				//				log.info(">>>>>>>>> sourceOffset={}", sourceOffset); 
+				//				log.info(">>>>>>>>> topic={}", topic); 
+				//				log.info(">>>>>>>>> schema={}", schema); 
+				//				log.info(">>>>>>>>> struct={}", struct); 
 				records.add(new SourceRecord(sourcePartition, sourceOffset, topic,  schema, struct));
 
-//				log.info(">>>>>>>>> return records={}", records);   
+				//				log.info(">>>>>>>>> return records={}", records);   
 
 				streamOffsetScn = scn;			
 				if (operation.equals("DDL")) {
@@ -211,12 +211,25 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 		} catch (Exception e) {
 			log.error(ExceptionUtils.getStackTrace(e));
+			
+			try {
+				log.info(">>> dbConn closed={}", dbConn.isClosed());
+				while (dbConn.isClosed()) {
+					log.info(">>> try to reconnect");
+					dbConn = new OracleConnection().connect(config);
+					Thread.sleep(50000);
+				}
+			} catch (SQLException ex) {
+				log.error(ExceptionUtils.getStackTrace(ex));
+				throw new InterruptedException(ex.getMessage());
+			}
 		}  finally {
 			try {
 				if (resultSet != null) resultSet.close();
 				if (cstmt != null) cstmt.close();
 			} catch (SQLException e) {
 				log.error(ExceptionUtils.getStackTrace(e));
+				throw new InterruptedException(e.getMessage());
 			}
 
 
