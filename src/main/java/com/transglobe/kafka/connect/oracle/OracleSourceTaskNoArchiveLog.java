@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -164,9 +165,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 					log.info("+++++++++++++++++++++ DDL ++++++++++++++++++++++++++"); 
 				}
 
-				topic = config.getTopic().equals("") ? ("etl"+DOT+segOwner+DOT+tableName).toUpperCase() : config.getTopic();
-				topic = topic.toLowerCase();
-
+				topic = config.getTopic().equals("") ? getTopicName(config, tableName) : config.getTopic();
 
 				dataSchemaStruct = utils.createDataSchema(segOwner, tableName, sqlRedo, operation);
 
@@ -285,5 +284,8 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 		stmt.close();
 
 		return currentScn;
+	}
+	private String getTopicName(OracleSourceConnectorConfigNoArchiveLog config, String tableName) {
+		return config.getTopicPattern().replace("%tablename%", StringUtils.lowerCase(tableName));
 	}
 }

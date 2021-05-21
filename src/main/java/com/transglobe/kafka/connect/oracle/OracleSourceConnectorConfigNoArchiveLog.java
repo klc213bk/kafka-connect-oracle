@@ -12,6 +12,7 @@ public class OracleSourceConnectorConfigNoArchiveLog extends AbstractConfig {
 
   public static final String DB_NAME_ALIAS = "db.name.alias";
   public static final String TOPIC_CONFIG = "topic";
+  public static final String TOPIC_PATTERN_CONFIG = "topic.pattern";
   public static final String DB_NAME_CONFIG = "db.name";
   public static final String DB_HOST_NAME_CONFIG = "db.hostname";
   public static final String DB_PORT_CONFIG = "db.port";
@@ -39,6 +40,7 @@ public class OracleSourceConnectorConfigNoArchiveLog extends AbstractConfig {
     return new ConfigDef()
         .define(DB_NAME_ALIAS, Type.STRING, Importance.HIGH, "Db Name Alias")
         .define(TOPIC_CONFIG, Type.STRING, Importance.HIGH, "Topic")
+        .define(TOPIC_PATTERN_CONFIG, Type.STRING, Importance.HIGH, "Topic Pattern")
         .define(DB_NAME_CONFIG, Type.STRING, Importance.HIGH, "Db Name")
         .define(DB_HOST_NAME_CONFIG,Type.STRING,Importance.HIGH,"Db HostName")
         .define(DB_PORT_CONFIG,Type.INT,Importance.HIGH,"Db Port")
@@ -58,6 +60,7 @@ public class OracleSourceConnectorConfigNoArchiveLog extends AbstractConfig {
 
   public String getDbNameAlias(){ return this.getString(DB_NAME_ALIAS);}
   public String getTopic(){ return this.getString(TOPIC_CONFIG);}
+  public String getTopicPattern(){ return this.getString(TOPIC_PATTERN_CONFIG);}
   public String getDbName(){ return this.getString(DB_NAME_CONFIG);}
   public String getDbHostName(){return this.getString(DB_HOST_NAME_CONFIG);}
   public int getDbPort(){return this.getInt(DB_PORT_CONFIG);}
