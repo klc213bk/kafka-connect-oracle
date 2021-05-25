@@ -1,4 +1,4 @@
-create or replace PROCEDURE         LOGMINER_NOARCHIVE_SP
+create or replace PROCEDURE             LOGMINER_NOARCHIVE_SP
 (
   i_scn NUMBER
   , i_commit_scn NUMBER
@@ -79,28 +79,6 @@ BEGIN
     + SYS.DBMS_LOGMNR.DICT_FROM_ONLINE_CATALOG
     + SYS.DBMS_LOGMNR.COMMITTED_DATA_ONLY
     + SYS.DBMS_LOGMNR.STRING_LITERALS_IN_STMT);
-    
- -- v_input :=   'LS_EBAO.TEST_T_ADDRESS, TEST_T_CONTACT_BENE, TEST_T_INSURED_LIST, TEST_T_POLICY_HOLDER';
-
-    /*
-  v_query_str := '
-    SELECT scn, cscn, COMMIT_SCN, timestamp, COMMIT_TIMESTAMP
-      , operation_code, operation,seg_owner, table_name , row_id, sql_redo 
-      FROM  v$logmnr_contents  
-      WHERE OPERATION_CODE in (1,2,3,5) and scn > :v_scn
-      and 
-        (seg_owner' || ' || ' || '''.''' || ' || ' || 'table_name) in (';
-            
-  v_query_str := v_query_str || '''LS_EBAO.TEST_T_POLICY_HOLDER'''; 
-  v_query_str := v_query_str || ',' || '''LS_EBAO.TEST_T_INSURED_LIST''';
-  v_query_str := v_query_str || ',' || '''LS_EBAO.TEST_T_CONTACT_BENE''';
-  v_query_str := v_query_str || ',' || '''LS_EBAO.TEST_T_ADDRESS''';
-  v_query_str := v_query_str || ')';
-     
-  OPEN o_recordset FOR v_query_str USING v_scn;
-     
-  DBMS_OUTPUT.PUT_LINE( 'v_query_str :' || v_query_str);
-            */
     
     
   OPEN o_recordset FOR
