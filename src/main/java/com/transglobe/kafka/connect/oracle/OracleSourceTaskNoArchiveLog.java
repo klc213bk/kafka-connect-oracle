@@ -169,7 +169,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 				dataSchemaStruct = utils.createDataSchema(segOwner, tableName, sqlRedo, operation);
 
-				log.info(">>>>>>>>> dataSchemaStruct={}", dataSchemaStruct);  
+				log.info(">>>>>>>>> topic={}", topic);  
 
 				Map<String,String> sourcePartition =  Collections.singletonMap("logminer", dbName);
 				Map<String,String> sourceOffset = new HashMap<String,String>();
