@@ -167,9 +167,25 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 				topic = config.getTopic().equals("") ? getTopicName(config, tableName) : config.getTopic();
 
+				Map<String, Object> data = new HashMap<>();
+				data.put("scn", scn);
+				data.put("commitScn", commitScn);
+				data.put("timestamp", timestamp);
+				data.put("commitTimestamp", commitTimestamp);
+				data.put("operationCode", operationCode);
+				data.put("operation", operation);
+				data.put("segOwner", segOwner);
+				data.put("tableName", tableName);
+				data.put("rowId", rowId);
+				data.put("sqlRedo", sqlRedo);
+				data.put("topic", topic);
+				log.info(">>>>>logminer data={}", data);
+
+				
+				
 				dataSchemaStruct = utils.createDataSchema(segOwner, tableName, sqlRedo, operation);
 
-				log.info(">>>>>>>>> topic={}", topic);  
+			//	log.info(">>>>>>>>> topic={}", topic);  
 
 				Map<String,String> sourcePartition =  Collections.singletonMap("logminer", dbName);
 				Map<String,String> sourceOffset = new HashMap<String,String>();
@@ -198,7 +214,6 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 					streamOffsetCommitScn = commitScn;
 				}
 			}
-			log.info(">>>>>>>>> count={}", count);
 			if (count == 0) {
 				streamOffsetCommitScn = currentScn;
 			} else {
