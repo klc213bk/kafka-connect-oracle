@@ -108,7 +108,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
-		log.info(">>>>>>>>> poll() sleep 2 secs");    
+//		log.info(">>>>>>>>> poll() sleep 2 secs");    
 		Thread.sleep(2000);
 
 		ArrayList<SourceRecord> records = new ArrayList<>();
@@ -116,7 +116,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 		ResultSet resultSet = null;
 		try {
 
-			log.info(">>>>>>>>> sstreamOffsetScn={}, treamOffsetCommitScn={}", streamOffsetScn, streamOffsetCommitScn);  
+//			log.info(">>>>>>>>> sstreamOffsetScn={}, treamOffsetCommitScn={}", streamOffsetScn, streamOffsetCommitScn);  
 
 			cstmt = dbConn.prepareCall("{ call LOGMINER_NOARCHIVE_SP(?,?,?,?,?) }");
 			cstmt.setLong(1, streamOffsetScn);
@@ -131,7 +131,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 			cstmt.execute();
 
 			Long currentScn = cstmt.getLong(4);
-			log.info(">>>>>>>>> currentScn={}", currentScn);
+//			log.info(">>>>>>>>> currentScn={}", currentScn);
 
 			resultSet = (ResultSet) cstmt.getObject(5);
 
@@ -217,14 +217,15 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 			if (count == 0) {
 				streamOffsetCommitScn = currentScn;
 			} else {
+				log.info(">>>>>>>>> count={}, streamOffsetScn={}, treamOffsetCommitScn={}", count, streamOffsetScn, streamOffsetCommitScn);  
+
 				streamOffsetCommitScn++;
-				log.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> count={}", count);
 			}
 
 			return records;
 
 		} catch (Exception e) {
-			log.error(ExceptionUtils.getStackTrace(e));
+			log.error("Error:" + ExceptionUtils.getStackTrace(e));
 			
 			try {
 				log.info(">>> dbConn closed={}", dbConn.isClosed());

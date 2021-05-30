@@ -17,7 +17,7 @@ BEGIN
 
   LOGMINER_NOARCHIVE_SP (i_scn    => 2814544,
   i_commit_scn    => 2814544,
-  i_table_whilelist => 'PMUSER.T_POLICY_HOLDER,PMUSER.T_INSURED_LIST,PMUSER.T_CONTRACT_BENE,PMUSER.T_ADDRESS',
+  i_table_whilelist => 'LS_EBAO.T_POLICY_HOLDER,LS_EBAO.T_INSURED_LIST,LS_EBAO.T_CONTRACT_BENE,LS_EBAO.T_ADDRESS',
   o_current_scn => o_current_scn,
               o_recordset => l_cursor);
   

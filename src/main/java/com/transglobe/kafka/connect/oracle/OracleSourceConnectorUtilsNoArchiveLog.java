@@ -284,7 +284,6 @@ public class OracleSourceConnectorUtilsNoArchiveLog{
         List<Expression> valueList = eList.getExpressions();
         int i =0;
         for (String key : dataMap.keySet()){
-        	log.info(">>>>> sqlRedo={}", sqlRedo);
           String value = cleanString(valueList.get(i).toString());
           if (config.getMapUnescapedStrings()) {
         	  // Issue #71
