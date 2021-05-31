@@ -108,7 +108,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
-//		log.info(">>>>>>>>> poll() sleep 2 secs");    
+		//		log.info(">>>>>>>>> poll() sleep 2 secs");    
 		Thread.sleep(2000);
 
 		ArrayList<SourceRecord> records = new ArrayList<>();
@@ -116,7 +116,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 		ResultSet resultSet = null;
 		try {
 
-//			log.info(">>>>>>>>> sstreamOffsetScn={}, treamOffsetCommitScn={}", streamOffsetScn, streamOffsetCommitScn);  
+			//			log.info(">>>>>>>>> sstreamOffsetScn={}, treamOffsetCommitScn={}", streamOffsetScn, streamOffsetCommitScn);  
 
 			cstmt = dbConn.prepareCall("{ call LOGMINER_NOARCHIVE_SP(?,?,?,?,?) }");
 			cstmt.setLong(1, streamOffsetScn);
@@ -131,7 +131,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 			cstmt.execute();
 
 			Long currentScn = cstmt.getLong(4);
-//			log.info(">>>>>>>>> currentScn={}", currentScn);
+			//			log.info(">>>>>>>>> currentScn={}", currentScn);
 
 			resultSet = (ResultSet) cstmt.getObject(5);
 
@@ -167,25 +167,26 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 				topic = config.getTopic().equals("") ? getTopicName(config, tableName) : config.getTopic();
 
-				Map<String, Object> data = new HashMap<>();
-				data.put("scn", scn);
-				data.put("commitScn", commitScn);
-				data.put("timestamp", timestamp);
-				data.put("commitTimestamp", commitTimestamp);
-				data.put("operationCode", operationCode);
-				data.put("operation", operation);
-				data.put("segOwner", segOwner);
-				data.put("tableName", tableName);
-				data.put("rowId", rowId);
-				data.put("sqlRedo", sqlRedo);
-				data.put("topic", topic);
-				log.info(">>>>>logminer data={}", data);
+				if (!"T_STREAMING_ETL_HEALTH_CDC".equals(tableName)) {
+					Map<String, Object> data = new HashMap<>();
+					data.put("scn", scn);
+					data.put("commitScn", commitScn);
+					data.put("timestamp", timestamp);
+					data.put("commitTimestamp", commitTimestamp);
+					data.put("operationCode", operationCode);
+					data.put("operation", operation);
+					data.put("segOwner", segOwner);
+					data.put("tableName", tableName);
+					data.put("rowId", rowId);
+					data.put("sqlRedo", sqlRedo);
+					data.put("topic", topic);
+					log.info(">>>>>logminer data={}", data);
+				}
 
-				
-				
+
 				dataSchemaStruct = utils.createDataSchema(segOwner, tableName, sqlRedo, operation);
 
-			//	log.info(">>>>>>>>> topic={}", topic);  
+				//	log.info(">>>>>>>>> topic={}", topic);  
 
 				Map<String,String> sourcePartition =  Collections.singletonMap("logminer", dbName);
 				Map<String,String> sourceOffset = new HashMap<String,String>();
@@ -226,7 +227,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 		} catch (Exception e) {
 			log.error("Error:" + ExceptionUtils.getStackTrace(e));
-			
+
 			try {
 				log.info(">>> dbConn closed={}", dbConn.isClosed());
 				while (dbConn.isClosed()) {
