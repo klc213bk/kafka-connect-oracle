@@ -22,7 +22,7 @@ public class OracleSourceConnectorConfigNoArchiveLog extends AbstractConfig {
   public static final String PARSE_DML_DATA = "parse.dml.data";
   public static final String DB_FETCH_SIZE = "db.fetch.size";
   public static final String RESET_OFFSET = "reset.offset";
-  //public static final String START_SCN = "start.scn";
+  public static final String START_SCN = "start.scn";
   public static final String MULTITENANT = "multitenant";
   public static final String TABLE_BLACKLIST = "table.blacklist";
   public static final String DML_TYPES = "dml.types";
@@ -50,7 +50,7 @@ public class OracleSourceConnectorConfigNoArchiveLog extends AbstractConfig {
         .define(PARSE_DML_DATA,Type.BOOLEAN,Importance.HIGH,"Parse DML Data")
         .define(DB_FETCH_SIZE,Type.INT,Importance.HIGH,"Database Record Fetch Size")
         .define(RESET_OFFSET,Type.BOOLEAN,Importance.HIGH,"Reset Offset")
-     //   .define(START_SCN,Type.STRING,"",Importance.LOW,"Start SCN")
+        .define(START_SCN,Type.STRING,"",Importance.LOW,"Start SCN")
         .define(MULTITENANT, Type.BOOLEAN, Importance.HIGH, "Database is multitenant (container)")
         .define(TABLE_BLACKLIST, Type.STRING, Importance.LOW, "Table will not be mined")
         .define(DML_TYPES, Type.STRING, "", Importance.LOW, "Types of DML to capture, CSV value of INSERT/UPDATE/DELETE")
@@ -70,7 +70,7 @@ public class OracleSourceConnectorConfigNoArchiveLog extends AbstractConfig {
   public Boolean getParseDmlData(){return this.getBoolean(PARSE_DML_DATA);}
   public int getDbFetchSize(){return this.getInt(DB_FETCH_SIZE);}
   public Boolean getResetOffset(){return this.getBoolean(RESET_OFFSET);}
- // public String getStartScn(){return this.getString(START_SCN);}
+  public String getStartScn(){return this.getString(START_SCN);}
   public Boolean getMultitenant() {return this.getBoolean(MULTITENANT);}
   public String getTableBlackList(){return this.getString(TABLE_BLACKLIST);}
   public String getDMLTypes(){return this.getString(DML_TYPES);}

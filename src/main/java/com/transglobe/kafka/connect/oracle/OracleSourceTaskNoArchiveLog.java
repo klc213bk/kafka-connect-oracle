@@ -84,20 +84,27 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 			Map<String,Object> offset = context.offsetStorageReader().offset(Collections.singletonMap("logminer", dbName));
 
-			if (config.getResetOffset() || offset == null){
-				log.info(">>>Resetting offset with new SCN");
-				streamOffsetScn = getCurrentScn();
+			if (StringUtils.isBlank(config.getStartScn())) {
+				if (config.getResetOffset() || offset == null){
+					log.info(">>>Resetting offset with new SCN");
+					streamOffsetScn = getCurrentScn();
+					streamOffsetCommitScn = streamOffsetScn;
+					streamOffsetRowId="";     
+				} else {
+					Object lastRecordedOffset = offset.get("scn");
+					Object commitScnPositionObject = offset.get("commitScn");
+					Object rowIdPositionObject = offset.get("rowId");        
+					streamOffsetScn = (lastRecordedOffset != null) ? Long.parseLong(String.valueOf(lastRecordedOffset)) : 0L;
+					streamOffsetCommitScn = (commitScnPositionObject != null) ? Long.parseLong(String.valueOf(commitScnPositionObject)) : 0L;
+					streamOffsetRowId = (rowIdPositionObject != null) ? (String) rowIdPositionObject : "";
+					log.info(">>>with offset");
+				}
+			} else {
+				streamOffsetScn = Long.valueOf(config.getStartScn());
 				streamOffsetCommitScn = streamOffsetScn;
 				streamOffsetRowId="";     
-				log.info(">>>reset");
-			} else {
-				Object lastRecordedOffset = offset.get("scn");
-				Object commitScnPositionObject = offset.get("commitScn");
-				Object rowIdPositionObject = offset.get("rowId");        
-				streamOffsetScn = (lastRecordedOffset != null) ? Long.parseLong(String.valueOf(lastRecordedOffset)) : 0L;
-				streamOffsetCommitScn = (commitScnPositionObject != null) ? Long.parseLong(String.valueOf(commitScnPositionObject)) : 0L;
-				streamOffsetRowId = (rowIdPositionObject != null) ? (String) rowIdPositionObject : "";
-				log.info(">>>with offset");
+				log.info(">>>with startscn={}", config.getStartScn());
+
 			}
 			log.info(">>>Offset values={} , scn:{},commitscn:{},rowid:{}",streamOffsetScn,streamOffsetCommitScn,streamOffsetRowId);        
 
@@ -135,90 +142,193 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 			resultSet = (ResultSet) cstmt.getObject(5);
 
+			Long threadNum;
 			Long scn;
 			Long commitScn;
+			Long startScn;
+			String xid;
 			Date timestamp;
 			Date commitTimestamp;
 			Integer operationCode;
 			String operation;
+			Integer status; 
+			String segTypeName;
+			String info;
+			Integer rollback;
 			String segOwner;
+			String segName;
 			String tableName;
-			String rowId;
+			String username;
 			String sqlRedo;
+			String rowId;
+			Integer csf;
+			String tableSpace;
+			String sessionInfo;
+			String rsId;
+			Long rbasqn;
+			Long rbablk;
+			Long sequenceNum;
+			String txName;
+			
+			Map<String, Map<String, Object>> sqlRedoKeepMap = null;
 			int count = 0;
 			while (resultSet.next()) {
 				count++;
-				scn = resultSet.getLong("SCN");
-				commitScn = resultSet.getLong("COMMIT_SCN");
-				timestamp = resultSet.getDate("TIMESTAMP");
-				commitTimestamp = resultSet.getDate("COMMIT_TIMESTAMP");
-				operationCode = resultSet.getInt("OPERATION_CODE");
-				operation = resultSet.getString("OPERATION");
-				segOwner = resultSet.getString("SEG_OWNER");
-				tableName = resultSet.getString("TABLE_NAME");
-				rowId = resultSet.getString("ROW_ID");
-				sqlRedo = resultSet.getString("SQL_REDO");
+				log.info(">>>>>>>>> count={}, streamOffsetScn={}, treamOffsetCommitScn={}", count, streamOffsetScn, streamOffsetCommitScn);  
+				
+				Map<String, Object> data = new HashMap<>();
+				try {
+					threadNum = resultSet.getLong("THREAD#");
+					scn = resultSet.getLong("SCN");
+					commitScn = resultSet.getLong("COMMIT_SCN");
+					startScn = resultSet.getLong("START_SCN");
+					xid = resultSet.getString("XID");
+					timestamp = resultSet.getDate("TIMESTAMP");
+					commitTimestamp = resultSet.getDate("COMMIT_TIMESTAMP");
+					operationCode = resultSet.getInt("OPERATION_CODE");
+					operation = resultSet.getString("OPERATION");
+					status = resultSet.getInt("STATUS");; 
+					segTypeName = resultSet.getString("SEG_TYPE_NAME");
+					info = resultSet.getString("INFO");
+					rollback = resultSet.getInt("ROLLBACK");
+					segOwner = resultSet.getString("SEG_OWNER");
+					segName = resultSet.getString("SEG_NAME");//
+					tableName = resultSet.getString("TABLE_NAME");
+					username = resultSet.getString("USERNAME");//
+					sqlRedo = resultSet.getString("SQL_REDO");
+					rowId = resultSet.getString("ROW_ID");
+					csf = resultSet.getInt("CSF");
+					tableSpace = resultSet.getString("TABLE_SPACE");//
+					sessionInfo = resultSet.getString("SESSION_INFO");//
+					rsId = resultSet.getString("RS_ID");//
+					rbasqn = resultSet.getLong("RBASQN");//
+					rbablk = resultSet.getLong("RBABLK");//
+					sequenceNum = resultSet.getLong("SEQUENCE#");//
+					txName = resultSet.getString("TX_NAME");//
+					
+					
+					if (operation.equals("DDL")) {
+						commitScn = 0L;
+						tableName = "_GENERIC_DDL";
+						log.info("+++++++++++++++++++++ DDL ++++++++++++++++++++++++++"); 
+					}
+					
 
-				if (operation.equals("DDL")) {
-					commitScn = 0L;
-					tableName = "_GENERIC_DDL";
-					log.info("+++++++++++++++++++++ DDL ++++++++++++++++++++++++++"); 
-				}
+					topic = config.getTopic().equals("") ? getTopicName(config, tableName) : config.getTopic();
 
-				topic = config.getTopic().equals("") ? getTopicName(config, tableName) : config.getTopic();
-
-				if (!"T_STREAMING_ETL_HEALTH_CDC".equals(tableName)) {
-					Map<String, Object> data = new HashMap<>();
+					data.put("threadNum", threadNum);
 					data.put("scn", scn);
 					data.put("commitScn", commitScn);
+					data.put("startScn", startScn);
+					data.put("xid", xid);
 					data.put("timestamp", timestamp);
 					data.put("commitTimestamp", commitTimestamp);
 					data.put("operationCode", operationCode);
 					data.put("operation", operation);
+					data.put("status", status);
+					data.put("segTypeName", segTypeName);
+					data.put("info", info);
+					data.put("rollback",rollback);
 					data.put("segOwner", segOwner);
+					data.put("segName", segName);
 					data.put("tableName", tableName);
-					data.put("rowId", rowId);
+					data.put("username", username);
 					data.put("sqlRedo", sqlRedo);
+					data.put("rowId", rowId);
+					data.put("csf", csf);
+					data.put("tableSpace", tableSpace);
+					data.put("sessionInfo", sessionInfo);
+					data.put("rsId", rsId);
+					data.put("rbasqn", rbasqn);
+					data.put("rbablk",rbablk);
+					data.put("sequenceNum",sequenceNum);
+					data.put("txName", txName); 
+					
 					data.put("topic", topic);
-					log.info(">>>>>logminer data={}", data);
-				}
+
+					if (csf.intValue() == 1) {
+						// sqlredo or sqlundo > 4000			
+						String key = rowId;
+						String oldSqlRedo = "";
+						String newSqlRedo = "";
+						if (sqlRedoKeepMap == null) {
+							sqlRedoKeepMap = new HashMap<String,Map<String, Object>>();
+							newSqlRedo = sqlRedo;
+							sqlRedoKeepMap.put(key, data);
+						} else {
+							if (sqlRedoKeepMap.containsKey(key)) {
+								oldSqlRedo = (String)sqlRedoKeepMap.get(key).get("sqlRedo");
+								newSqlRedo = oldSqlRedo + sqlRedo;
+								sqlRedoKeepMap.get(key).put("sqlRedo", newSqlRedo);
+							} else {
+								newSqlRedo = sqlRedo;
+								sqlRedoKeepMap.put(key, data);
+							}
+						}
+						
+						log.info(">>>>>csf={}, key={}, oldSqlRedoKeep={}, newSqlRedoKeep={}", csf, key, oldSqlRedo, newSqlRedo);
+						continue;
+					} else {
+						if (sqlRedoKeepMap != null) {
+							String key = rowId;
+							String oldSqlRedo = "";
+							String newSqlRedo = "";
+							if (sqlRedoKeepMap.containsKey(key)) {
+								data = sqlRedoKeepMap.get(key);
+								oldSqlRedo = (String)data.get("sqlRedo");
+								newSqlRedo = oldSqlRedo + sqlRedo;
+								data.put(sqlRedo, newSqlRedo);
+								
+								log.info(">>>>>csf={}, key={}, oldSqlRedoKeep={}, newSqlRedoKeep={}", csf, key, oldSqlRedo, newSqlRedo);
+
+								sqlRedoKeepMap = null;
+							} else {
+								log.error(">>>>>csf={}, key={}, data={}",csf, key, data);
+								throw new Exception("sqlRedoKeepMap does not contain key");
+							}
+						} else {
+							// normal case
+							log.info(">>>>>logminer data={}",data);
+							
+						}
+
+					}
+					dataSchemaStruct = utils.createDataSchema(segOwner, tableName, sqlRedo, operation);
+
+					Map<String,String> sourcePartition =  Collections.singletonMap("logminer", dbName);
+					Map<String,String> sourceOffset = new HashMap<String,String>();
+					sourceOffset.put("scn", scn.toString());
+					sourceOffset.put("commitScn", commitScn.toString());
+					sourceOffset.put("rowId", rowId);
 
 
-				dataSchemaStruct = utils.createDataSchema(segOwner, tableName, sqlRedo, operation);
+					Data row = new Data(scn, segOwner, tableName, sqlRedo, new Timestamp(timestamp.getTime()), operation);
 
-				//	log.info(">>>>>>>>> topic={}", topic);  
+					Schema schema = dataSchemaStruct.getDmlRowSchema();
+					Struct struct = setValueV2(row, dataSchemaStruct);
+					//				log.info(">>>>>>>>> sourcePartition={}", sourcePartition);   
+					//				log.info(">>>>>>>>> sourceOffset={}", sourceOffset); 
+					//				log.info(">>>>>>>>> topic={}", topic); 
+					//				log.info(">>>>>>>>> schema={}", schema); 
+					//				log.info(">>>>>>>>> struct={}", struct); 
+					records.add(new SourceRecord(sourcePartition, sourceOffset, topic,  schema, struct));
 
-				Map<String,String> sourcePartition =  Collections.singletonMap("logminer", dbName);
-				Map<String,String> sourceOffset = new HashMap<String,String>();
-				sourceOffset.put("scn", scn.toString());
-				sourceOffset.put("commitScn", commitScn.toString());
-				sourceOffset.put("rowId", rowId);
+					//				log.info(">>>>>>>>> return records={}", records);   
 
+					streamOffsetScn = scn;			
+					if (operation.equals("DDL")) {
+						streamOffsetCommitScn = scn;
+					} else {
+						streamOffsetCommitScn = commitScn;
+					}
+				} catch (Exception e) {
+					log.error(">>>>>>>>> Error:" + ExceptionUtils.getStackTrace(e));
+				} 
 
-				Data row = new Data(scn, segOwner, tableName, sqlRedo, new Timestamp(timestamp.getTime()), operation);
-
-				Schema schema = dataSchemaStruct.getDmlRowSchema();
-				Struct struct = setValueV2(row, dataSchemaStruct);
-				//				log.info(">>>>>>>>> sourcePartition={}", sourcePartition);   
-				//				log.info(">>>>>>>>> sourceOffset={}", sourceOffset); 
-				//				log.info(">>>>>>>>> topic={}", topic); 
-				//				log.info(">>>>>>>>> schema={}", schema); 
-				//				log.info(">>>>>>>>> struct={}", struct); 
-				records.add(new SourceRecord(sourcePartition, sourceOffset, topic,  schema, struct));
-
-				//				log.info(">>>>>>>>> return records={}", records);   
-
-				streamOffsetScn = scn;			
-				if (operation.equals("DDL")) {
-					streamOffsetCommitScn = scn;
-				} else {
-					streamOffsetCommitScn = commitScn;
-				}
 			}
 			if (count == 0) {
 				streamOffsetCommitScn = currentScn;
 			} else {
-				log.info(">>>>>>>>> count={}, streamOffsetScn={}, treamOffsetCommitScn={}", count, streamOffsetScn, streamOffsetCommitScn);  
 
 				streamOffsetCommitScn++;
 			}
