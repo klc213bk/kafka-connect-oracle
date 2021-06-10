@@ -83,9 +83,9 @@ BEGIN
     
   OPEN o_recordset FOR
       SELECT SCN, COMMIT_SCN, TIMESTAMP, COMMIT_TIMESTAMP
-      , OPERATION_CODE, OPERATION,SEG_OWNER, TABLE_NAME , ROW_ID, SQL_REDO 
+      , OPERATION_CODE, OPERATION,SEG_OWNER, TABLE_NAME , ROW_ID, SQL_REDO, CSF 
       FROM  v$logmnr_contents
-      WHERE --(OPERATION_CODE = 5 and SCN >  ) or 
+      WHERE 
         (OPERATION_CODE in (1,2,3) and COMMIT_SCN >= v_commit_scn and COMMIT_SCN < o_current_scn
           and 
            (seg_owner || '.' || table_name)
