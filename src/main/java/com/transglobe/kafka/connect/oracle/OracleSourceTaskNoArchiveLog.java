@@ -56,6 +56,9 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 	private boolean closed=false;
 	private DataSchemaStruct dataSchemaStruct;
 
+	private Map<String, Map<String, Object>> csf0Map;
+	private Map<String, Map<String, Object>> csf1Map;
+
 	@Override
 	public String version() {
 		return VersionUtil.getVersion();
@@ -108,6 +111,8 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 			}
 			log.info(">>>Offset values={} , scn:{},commitscn:{},rowid:{}",streamOffsetScn,streamOffsetCommitScn,streamOffsetRowId);        
 
+			csf0Map = new HashMap<>();
+			csf1Map = new HashMap<>();
 		}catch(SQLException e){
 			throw new ConnectException("Error at database tier, Please check : "+e.toString());
 		}
@@ -169,13 +174,14 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 			Long rbablk;
 			Long sequenceNum;
 			String txName;
-			
-			Map<String, Map<String, Object>> sqlRedoKeepMap = null;
+
+			//			Map<String, Map<String, Object>> sqlRedoKeepMap = null;
+
 			int count = 0;
 			while (resultSet.next()) {
 				count++;
 				log.info(">>>>>>>>> count={}, streamOffsetScn={}, treamOffsetCommitScn={}", count, streamOffsetScn, streamOffsetCommitScn);  
-				
+
 				Map<String, Object> data = new HashMap<>();
 				try {
 					threadNum = resultSet.getLong("THREAD#");
@@ -205,14 +211,14 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 					rbablk = resultSet.getLong("RBABLK");//
 					sequenceNum = resultSet.getLong("SEQUENCE#");//
 					txName = resultSet.getString("TX_NAME");//
-					
-					
+
+
 					if (operation.equals("DDL")) {
 						commitScn = 0L;
 						tableName = "_GENERIC_DDL";
 						log.info("+++++++++++++++++++++ DDL ++++++++++++++++++++++++++"); 
 					}
-					
+
 
 					topic = config.getTopic().equals("") ? getTopicName(config, tableName) : config.getTopic();
 
@@ -243,56 +249,82 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 					data.put("rbablk",rbablk);
 					data.put("sequenceNum",sequenceNum);
 					data.put("txName", txName); 
-					
+
 					data.put("topic", topic);
 
-					if (csf.intValue() == 1) {
-						// sqlredo or sqlundo > 4000			
-						String key = rowId;
-						String oldSqlRedo = "";
-						String newSqlRedo = "";
-						if (sqlRedoKeepMap == null) {
-							sqlRedoKeepMap = new HashMap<String,Map<String, Object>>();
-							newSqlRedo = sqlRedo;
-							sqlRedoKeepMap.put(key, data);
-						} else {
-							if (sqlRedoKeepMap.containsKey(key)) {
-								oldSqlRedo = (String)sqlRedoKeepMap.get(key).get("sqlRedo");
-								newSqlRedo = oldSqlRedo + sqlRedo;
-								sqlRedoKeepMap.get(key).put("sqlRedo", newSqlRedo);
-							} else {
-								newSqlRedo = sqlRedo;
-								sqlRedoKeepMap.put(key, data);
-							}
-						}
+					if (!operation.equals("DDL")) {
+						String key = scn + "-" + commitScn + "-" + rowId;
+						String op = sqlRedo.substring(0, 6);
+						boolean withOp = false;
+						if(StringUtils.equalsIgnoreCase("INSERT", op)
+								|| StringUtils.equalsIgnoreCase("UPDATE", op)
+								|| StringUtils.equalsIgnoreCase("DELETE", op)) {
+							withOp = true;
+						} 
+						if (withOp && csf.intValue() == 0) {
+							// normal complate withOp cf0
+							log.info(">>>>>normal case, logminer data={}",data);
+						} else if (withOp && csf.intValue() == 1 ) {
+							// check if csf0 exists with key
+							if (csf0Map.containsKey(key)) {
+								String partialRedo = (String)csf0Map.get(key).get("sqlRedo");
+								String thisRedo = (String)data.get("sqlRedo");
+								String wholeRedo = thisRedo + partialRedo;
+								data.put("sqlRedo", wholeRedo);
 						
-						log.info(">>>>>csf={}, key={}, oldSqlRedoKeep={}, newSqlRedoKeep={}", csf, key, oldSqlRedo, newSqlRedo);
-						continue;
-					} else {
-						if (sqlRedoKeepMap != null) {
-							String key = rowId;
-							String oldSqlRedo = "";
-							String newSqlRedo = "";
-							if (sqlRedoKeepMap.containsKey(key)) {
-								data = sqlRedoKeepMap.get(key);
-								oldSqlRedo = (String)data.get("sqlRedo");
-								newSqlRedo = oldSqlRedo + sqlRedo;
-								data.put(sqlRedo, newSqlRedo);
+								// complete withOp cf1, match case A
+								log.info(">>>complete withOp cf1, match case A, partialRedo={}", partialRedo);
+								log.info("");
+								log.info(">>>>> thisRedo={}",thisRedo);
+								log.info("");
+								log.info(">>>>> data={}",data);
 								
-								log.info(">>>>>csf={}, key={}, oldSqlRedoKeep={}, newSqlRedoKeep={}", csf, key, oldSqlRedo, newSqlRedo);
+								csf0Map.remove(key);
 
-								sqlRedoKeepMap = null;
 							} else {
-								log.error(">>>>>csf={}, key={}, data={}",csf, key, data);
-								throw new Exception("sqlRedoKeepMap does not contain key");
-							}
-						} else {
-							// normal case
-							log.info(">>>>>logminer data={}",data);
-							
-						}
+								csf1Map.put(key, data);
 
+								// uncomplete case B, withOp cf1 
+								log.info(">>>uncomplete case B, withOp cf1, data={}", data);
+								continue;
+							}
+						} else if (!withOp && csf.intValue() == 0 ) {
+							if (csf1Map.containsKey(key)) {
+								String partialRedo = (String)csf1Map.get(key).get("sqlRedo");
+								String thisRedo = (String)data.get("sqlRedo");
+								String wholeRedo = partialRedo + thisRedo;
+								data.put("sqlRedo", wholeRedo);
+
+								// assume csf1 contains Op
+								// complete withoutOp csf0, match case B
+								log.info(">>>complete withoutOp csf0, match case B, partialRedo={}", partialRedo);
+								log.info("");
+								log.info(">>>>> thisRedo={}",thisRedo);
+								log.info("");
+								log.info(">>>>> data={}",data);
+
+								csf1Map.remove(key);
+							} else {
+								if (csf0Map.containsKey(key)) {
+									log.error(">>>csf0Map data={}, resultdata={}", csf0Map.get(key), data);
+									throw new Exception("duplicate csf 0");
+								} else {
+									csf0Map.put(key, data);
+									// uncomplete case A, withoutOp cf0 
+									log.info(">>>uncomplete case A, withoutOp cf0 data={}", data);
+									continue;
+								}
+							}
+
+						} else if (!withOp && csf.intValue() == 1 ) {
+							log.error(">>>csf0Mapdata={}, csf1Mapdata={}, resultdata={}", csf0Map.get(key), csf1Map.get(key), data);
+							throw new Exception("Should not go here");
+						} else {
+							throw new Exception("No such operation");
+						}
 					}
+				
+					sqlRedo = (String)data.get("sqlRedo");
 					dataSchemaStruct = utils.createDataSchema(segOwner, tableName, sqlRedo, operation);
 
 					Map<String,String> sourcePartition =  Collections.singletonMap("logminer", dbName);
@@ -301,7 +333,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 					sourceOffset.put("commitScn", commitScn.toString());
 					sourceOffset.put("rowId", rowId);
 
-
+					
 					Data row = new Data(scn, segOwner, tableName, sqlRedo, new Timestamp(timestamp.getTime()), operation);
 
 					Schema schema = dataSchemaStruct.getDmlRowSchema();
@@ -339,6 +371,9 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 			log.error("Error:" + ExceptionUtils.getStackTrace(e));
 
 			try {
+				if (resultSet != null) resultSet.close();
+				if (cstmt != null) cstmt.close();
+				
 				log.info(">>> dbConn closed={}", dbConn.isClosed());
 				while (dbConn.isClosed()) {
 					log.info(">>> try to reconnect");
