@@ -406,10 +406,11 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 			log.info(">>>Logminer session cancel");
 			//			if (logMinerSelect != null) logMinerSelect.cancel();
 
-			CallableStatement s = dbConn.prepareCall("begin \nSYS.DBMS_LOGMNR.END_LOGMNR; \nend;");
-			s.execute();
-			s.close();
 			if (dbConn!=null){
+				CallableStatement s = dbConn.prepareCall("begin \nSYS.DBMS_LOGMNR.END_LOGMNR; \nend;");
+				s.execute();
+				s.close();
+				
 				log.info("Closing database connection.Last SCN : {}",streamOffsetScn);        
 				//				logMinerSelect.close();
 				//				logMinerStartStmt.close();        
