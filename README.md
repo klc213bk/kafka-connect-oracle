@@ -1,5 +1,12 @@
 # Kafka Connect Oracle
 
+
+ALTER TABLE schema.table_name ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+
+
+select current_scn from v$database;
+
+
 ########################################## Oracle Logminer ################################
 archive log mod : disabled
 
