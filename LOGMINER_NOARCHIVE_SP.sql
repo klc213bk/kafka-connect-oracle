@@ -1,4 +1,4 @@
-create or replace PROCEDURE LOGMINER_NOARCHIVE_SP
+create or replace NONEDITIONABLE PROCEDURE         LOGMINER_NOARCHIVE_SP
 (
   i_scn NUMBER
   , i_commit_scn NUMBER
@@ -21,7 +21,6 @@ create or replace PROCEDURE LOGMINER_NOARCHIVE_SP
 BEGIN
   DBMS_OUTPUT.PUT_LINE('input_scn:' || i_scn || ',input commit scn:' || i_commit_scn);
   
-  
   v_table_whilelist := i_table_whilelist;
    
   select current_scn into o_current_scn from v$database;
@@ -37,6 +36,18 @@ BEGIN
     v_scn := i_scn;
     v_commit_scn := i_commit_scn;
   end if;
+  /*
+  if (i_scn is null or i_scn = 0) then
+    v_scn := o_current_scn;
+    v_commit_scn := o_current_scn;
+  elsif (i_commit_scn is null or i_commit_scn = 0) then
+    v_scn := i_scn;
+    v_commit_scn := i_scn;
+  else 
+    v_scn := i_scn;
+    v_commit_scn := i_commit_scn;
+  end if;
+  */
   DBMS_OUTPUT.PUT_LINE('v_scn:' || v_scn || ', v_commit_scn:' || v_commit_scn);
   
   select min(first_change#) into v_min_first_change# from v$log;
@@ -59,14 +70,14 @@ BEGIN
         v_index := v_index + 1;
         
         if (v_index = 1) then
-          dbms_logmnr.add_logfile(
+          sys.dbms_logmnr.add_logfile(
             LogFileName=> rec.member,
-            Options=>dbms_logmnr.new);
+            Options=> sys.dbms_logmnr.new);
             DBMS_OUTPUT.PUT_LINE(rec.group# || ', new: ' || rec.member);
         else
-          dbms_logmnr.add_logfile(
+          sys.dbms_logmnr.add_logfile(
             LogFileName=> rec.member,
-            Options=>dbms_logmnr.addfile);
+            Options=> sys.dbms_logmnr.addfile);
             DBMS_OUTPUT.PUT_LINE(rec.group# || ', add file: ' || rec.member);
         end if;
     end if;
@@ -97,44 +108,6 @@ BEGIN
         order by scn  
      ;
 
-/*
-  for rec in (SELECT thread#, scn, cscn, start_scn
-  ,(xidusn||'.'||xidslt||'.'||xidsqn) AS xid,timestamp, COMMIT_TIMESTAMP
-  , operation_code, operation,status, SEG_TYPE_NAME 
-  ,info,seg_owner, table_name, username, sql_redo ,row_id, csf
-  , TABLE_SPACE, SESSION_INFO, RS_ID, RBASQN, RBABLK, SEQUENCE#
-  , TX_NAME, SEG_NAME 
-  FROM  v$logmnr_contents  
-  WHERE OPERATION_CODE in (1,2,3,5) and scn > v_scn 
-  and (
-    (seg_owner='LS_EBAO' and table_name = 'TEST_T_POLICY_HOLDER')
-    or (seg_owner='LS_EBAO' and table_name = 'TEST_T_INSURED_LIST')
-    or (seg_owner='LS_EBAO' and table_name = 'TEST_T_CONTACT_BENE')
-    or (seg_owner='LS_EBAO' and table_name = 'TEST_T_ADDRESS')
-    )
-  ) loop
-  null;
-
-    DBMS_OUTPUT.PUT_LINE( rec.start_scn 
-    || ',' || rec.cscn
-    || ',' || rec.xid
-    || ',' || rec.timestamp
-    || ',' || rec.COMMIT_TIMESTAMP
-    || ',' || rec.operation_code
-    || ',' || rec.operation
-    || ',' || rec.seg_owner
-    || ',' || rec.table_name
-    || ',' || rec.SEQUENCE#
-     || ',' || rec.row_id
-     || ',' ||rec.sql_redo
-        );
-    
-  end loop;
-  */
-  
-
-
---  DBMS_LOGMNR.END_LOGMNR();
 EXCEPTION   
   WHEN e_invalid_input_scn THEN
     RAISE_APPLICATION_ERROR (-20201, 'scn=' || v_scn || ' ' || 'min scn=' || v_min_first_change#);
