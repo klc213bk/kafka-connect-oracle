@@ -1,4 +1,4 @@
-create or replace NONEDITIONABLE PROCEDURE         LOGMINER_NOARCHIVE_SP
+create or replace PROCEDURE LOGMINER_NOARCHIVE_SP
 (
   i_scn NUMBER
   , i_commit_scn NUMBER
