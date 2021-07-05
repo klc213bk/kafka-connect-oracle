@@ -30,6 +30,7 @@ BEGIN
   
   if (i_scn is null or i_scn = 0) then
     v_scn := o_current_scn;
+    v_commit_scn := o_current_scn;
   elsif (i_commit_scn is null or i_commit_scn = 0) then
     v_commit_scn := o_current_scn;
   else 
