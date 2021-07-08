@@ -36,18 +36,7 @@ BEGIN
     v_scn := i_scn;
     v_commit_scn := i_commit_scn;
   end if;
-  /*
-  if (i_scn is null or i_scn = 0) then
-    v_scn := o_current_scn;
-    v_commit_scn := o_current_scn;
-  elsif (i_commit_scn is null or i_commit_scn = 0) then
-    v_scn := i_scn;
-    v_commit_scn := i_scn;
-  else 
-    v_scn := i_scn;
-    v_commit_scn := i_commit_scn;
-  end if;
-  */
+
   DBMS_OUTPUT.PUT_LINE('v_scn:' || v_scn || ', v_commit_scn:' || v_commit_scn);
   
   select min(first_change#) into v_min_first_change# from v$log;

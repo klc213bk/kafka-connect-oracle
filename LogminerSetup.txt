@@ -1,0 +1,55 @@
+1.our database must be running in ARCHIVELOG mode
+To check the current database mode, run:
+	SELECT LOG_MODE FROM V$DATABASE;
+
+    If the result is ARCHIVELOG - success! Move on to step 2.
+
+    If the result is NOARCHIVELOG, you'll need to enable it by running:
+
+    For self-hosted deployments:
+    
+    SQL>SHUTDOWN IMMEDIATE;
+    SQL>STARTUP MOUNT;
+    SQL>ALTER DATABASE;
+    SQL>ALTER DATABASE ARCHIVELOG;
+    SQL>ALTER DATABASE OPEN;
+    
+    Note that the above sequence will restart your instance since that's required for the changes to take effect.
+
+2. Supplemental log data must be enabled for the database .
+
+	## 至少supplemental_log_data_min is enabled
+	SQL> select supplemental_log_data_min, supplemental_log_data_pk, supplemental_log_data_all from v$database;
+	if no, add supplemental_log_data_min
+	SQL> ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+
+a. For database -level logging
+    SQL>ALTER DATABASE ADD SUPPLEMENTAL LOG DATA (all) COLUMNS;
+
+    You can also enable supplemental logging on Primary Key columns only, but note that this may cause extra load on the database.
+
+b.For table-level logging    
+	## check if table-level logging
+	SQL>   select *
+	FROM DBA_LOG_GROUPS
+	where TABLE_NAME in('T_CONTRACT_BENE','T_INSURED_LIST','T_POLICY_HOLDER','T_POLICY_HOLDER_LOG','T_CONTRACT_BENE_LOG','T_INSURED_LIST_LOG','T_POLICY_HOLDER_LOG','T_ADDRESS');
+    
+    SQL> ALTER TABLE LS_EBAO.T_POLICY_HOLDER ADD SUPPLEMENTAL LOG DATA(ALL) COLUMNS;
+    repeated for all table logging enabled
+    
+3. The user you will be using to connect to Oracle must have sufficient privileges granted.
+
+	To grant the privileges, run the following command (replacing <user> with the correct username):
+    
+SQL>CREATE USER tglminer IDENTIFIED BY tglminerpass default tablespace users;
+SQL>GRANT CREATE session,execute_catalog_role,select any transaction,select any dictionary TO tglminer;
+SQL>ALTER USER tglminer QUOTA UNLIMITED ON users;
+SQL>GRANT CREATE PROCEDURE TO tglminer;
+SQL>GRANT CREATE TABLE TO tglminer;
+SQL>GRANT CREATE SESSION TO tglminer;
+SQL>GRANT EXECUTE ON SYS.DBMS_LOGMNR TO tglminer;
+SQL>GRANT EXECUTE ON SYS.DBMS_LOGMNR_D TO tglminer;
+SQL>GRANT LOGMINING TO tglminer;
+    
+   
+        
