@@ -34,7 +34,8 @@ b.For table-level logging
 	FROM DBA_LOG_GROUPS
 	where TABLE_NAME in('T_CONTRACT_BENE','T_INSURED_LIST','T_POLICY_HOLDER','T_POLICY_HOLDER_LOG','T_CONTRACT_BENE_LOG','T_INSURED_LIST_LOG','T_POLICY_HOLDER_LOG','T_ADDRESS');
     
-    SQL> ALTER TABLE LS_EBAO.T_POLICY_HOLDER ADD SUPPLEMENTAL LOG DATA(ALL) COLUMNS;
+    SQL> ALTER TABLE [schema].[table name] ADD SUPPLEMENTAL LOG DATA(ALL) COLUMNS;
+
     repeated for all table logging enabled
     
 3. The user you will be using to connect to Oracle must have sufficient privileges granted.
