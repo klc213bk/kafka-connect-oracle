@@ -63,7 +63,11 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
   public int getDbPort(){return this.getInt(DB_PORT_CONFIG);}
   public String getDbUser(){return this.getString(DB_USER_CONFIG);}
   public String getDbUserPassword(){return this.getString(DB_USER_PASSWORD_CONFIG);}
-  public String getTableWhiteList(){return this.getString(TABLE_WHITELIST);}
+  public String getTableWhiteList(){
+		String str = this.getString(TABLE_WHITELIST);
+		str = str.replace("\n", "").replace("\r", "");
+		return str;
+	}
   public Boolean getParseDmlData(){return this.getBoolean(PARSE_DML_DATA);}
   public int getDbFetchSize(){return this.getInt(DB_FETCH_SIZE);}
   public Boolean getResetOffset(){return this.getBoolean(RESET_OFFSET);}
