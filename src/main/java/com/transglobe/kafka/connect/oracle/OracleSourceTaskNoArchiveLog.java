@@ -89,7 +89,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 			if (StringUtils.isBlank(config.getStartScn())) {
 				if (config.getResetOffset() || offset == null){
-					log.info(">>>Resetting offset with new SCN");
+					log.info(">>>Resetting offset with registered or current SCN");
 					streamOffsetScn = getCurrentScn();
 					streamOffsetCommitScn = streamOffsetScn;
 					streamOffsetRowId="";     
@@ -109,7 +109,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 				log.info(">>>with startscn={}", config.getStartScn());
 
 			}
-			log.info(">>>Offset values={} , scn:{},commitscn:{},rowid:{}",streamOffsetScn,streamOffsetCommitScn,streamOffsetRowId);        
+			log.info(">>>Offset scn:{},commitscn:{},rowid:{}",streamOffsetScn,streamOffsetCommitScn,streamOffsetRowId);        
 
 			csf0Map = new HashMap<>();
 			csf1Map = new HashMap<>();
@@ -271,14 +271,14 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 								String thisRedo = (String)data.get("sqlRedo");
 								String wholeRedo = thisRedo + partialRedo;
 								data.put("sqlRedo", wholeRedo);
-						
+
 								// complete withOp cf1, match case A
 								log.info(">>>complete withOp cf1, match case A, partialRedo={}", partialRedo);
 								log.info("");
 								log.info(">>>>> thisRedo={}",thisRedo);
 								log.info("");
 								log.info(">>>>> data={}",data);
-								
+
 								csf0Map.remove(key);
 
 							} else {
@@ -323,7 +323,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 							throw new Exception("No such operation");
 						}
 					}
-				
+
 					sqlRedo = (String)data.get("sqlRedo");
 					dataSchemaStruct = utils.createDataSchema(segOwner, tableName, sqlRedo, operation);
 
@@ -333,7 +333,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 					sourceOffset.put("commitScn", commitScn.toString());
 					sourceOffset.put("rowId", rowId);
 
-					
+
 					Data row = new Data(scn, segOwner, tableName, sqlRedo, new Timestamp(timestamp.getTime()), operation);
 
 					Schema schema = dataSchemaStruct.getDmlRowSchema();
@@ -373,7 +373,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 			try {
 				if (resultSet != null) resultSet.close();
 				if (cstmt != null) cstmt.close();
-				
+
 				log.info(">>> dbConn closed={}", dbConn.isClosed());
 				while (dbConn.isClosed()) {
 					log.info(">>> try to reconnect");
@@ -410,7 +410,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 				CallableStatement s = dbConn.prepareCall("begin \nSYS.DBMS_LOGMNR.END_LOGMNR; \nend;");
 				s.execute();
 				s.close();
-				
+
 				log.info("Closing database connection.Last SCN : {}",streamOffsetScn);        
 				//				logMinerSelect.close();
 				//				logMinerStartStmt.close();        
@@ -436,19 +436,60 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 	}  
 
 	private Long getCurrentScn() throws SQLException {
-		String sql = "select min(current_scn) CURRENT_SCN from gv$database";
-		Statement stmt = dbConn.createStatement();
-		ResultSet rs = stmt.executeQuery(sql);
-		Long currentScn = null;
-		while (rs.next()) {
-			currentScn = rs.getLong("CURRENT_SCN");
-		}
-		rs.close();
-		stmt.close();
 
-		return currentScn;
+		Long registerdCurrentScn = getLegalRegisteredCurrentScn();
+		if (registerdCurrentScn != null) {
+			return registerdCurrentScn;
+		} else {
+			String sql = "select min(current_scn) CURRENT_SCN from gv$database";
+			Statement stmt = null;
+			ResultSet rs = null;
+			Long currentScn = 0L;
+			try {
+				stmt = dbConn.createStatement();
+				rs = stmt.executeQuery(sql);
+				while (rs.next()) {
+					currentScn = rs.getLong("CURRENT_SCN");
+				}
+			} finally {
+				if (rs != null) rs.close();
+				if (stmt != null) stmt.close();
+
+			}
+
+			return currentScn;
+		}
+
+
 	}
 	private String getTopicName(OracleSourceConnectorConfigNoArchiveLog config, String tableName) {
 		return config.getTopicPattern().replace("%tablename%", StringUtils.lowerCase(tableName));
+	}
+	private Long getLegalRegisteredCurrentScn() throws SQLException {
+		Statement stmt = null;
+		ResultSet rs = null;
+		String sql = "";
+		Long currentScn = null;
+		try {
+			sql = "select TIME, CURRENT_SCN from t_streaming_register order by time desc fetch next 1 row only";
+			stmt = dbConn.createStatement();
+			rs = stmt.executeQuery(sql);
+			long time = 0;
+			while (rs.next()) {
+				time = rs.getLong("TIME");
+				currentScn = rs.getLong("CURRENT_SCN");
+			}
+			if (currentScn != null) {
+				if (System.currentTimeMillis() - time > 24*60*60*1000) {
+					currentScn = null;
+				}
+			}
+
+		} finally {
+			if (rs != null) rs.close();
+			if (stmt != null) stmt.close();
+		}
+
+		return currentScn;
 	}
 }
