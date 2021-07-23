@@ -170,6 +170,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 			String tableSpace;
 			String sessionInfo;
 			String rsId;
+			Long ssn = 0L;
 			Long rbasqn;
 			Long rbablk;
 			Long sequenceNum;
@@ -207,6 +208,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 					tableSpace = resultSet.getString("TABLE_SPACE");//
 					sessionInfo = resultSet.getString("SESSION_INFO");//
 					rsId = resultSet.getString("RS_ID");//
+					ssn = resultSet.getLong("SSN");//
 					rbasqn = resultSet.getLong("RBASQN");//
 					rbablk = resultSet.getLong("RBABLK");//
 					sequenceNum = resultSet.getLong("SEQUENCE#");//
@@ -245,6 +247,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 					data.put("tableSpace", tableSpace);
 					data.put("sessionInfo", sessionInfo);
 					data.put("rsId", rsId);
+					data.put("ssn", ssn);
 					data.put("rbasqn", rbasqn);
 					data.put("rbablk",rbablk);
 					data.put("sequenceNum",sequenceNum);
@@ -334,7 +337,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 					sourceOffset.put("rowId", rowId);
 
 
-					Data row = new Data(scn, segOwner, tableName, sqlRedo, new Timestamp(timestamp.getTime()), operation);
+					Data row = new Data(rsId, ssn, scn, segOwner, tableName, sqlRedo, new Timestamp(timestamp.getTime()), operation);
 
 					Schema schema = dataSchemaStruct.getDmlRowSchema();
 					Struct struct = setValueV2(row, dataSchemaStruct);

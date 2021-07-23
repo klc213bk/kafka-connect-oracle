@@ -9,6 +9,8 @@ import java.sql.Timestamp;
 
 public class Data{
 
+	private String rsId;
+	private long ssn;
     private long scn;
     private String segOwner;
     private String segName;
@@ -16,8 +18,10 @@ public class Data{
     private Timestamp timeStamp;
     private String operation;
 
-    public Data(Long scn,String segOwner,String segName,String sqlRedo,Timestamp timeStamp,String operation){
+    public Data(String rsId, long ssn, Long scn,String segOwner,String segName,String sqlRedo,Timestamp timeStamp,String operation){
         super();
+        this.rsId = rsId;
+        this.ssn = ssn;
         this.scn=scn;
         this.segOwner=segOwner;
         this.segName=segName;
@@ -26,6 +30,14 @@ public class Data{
         this.operation=operation;
     }
 
+
+    public String getRsId(){
+        return rsId;
+    }
+
+    public long getSsn(){
+        return ssn;
+    }
     public long getScn(){
         return scn;
     }
@@ -50,10 +62,17 @@ public class Data{
         return operation;
     }
 
+    public void setRsId(String rsId){
+        this.rsId = rsId;
+    }
+
+    public void setSsn(Long ssn){
+        this.ssn=ssn;
+    }
+
     public void setScn(Long scn){
         this.scn=scn;
     }
-
     public void setSegOwner(String segOwner){
         this.segOwner=segOwner;
     }
