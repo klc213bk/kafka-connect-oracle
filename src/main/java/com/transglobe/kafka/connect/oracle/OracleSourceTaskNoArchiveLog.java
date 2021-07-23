@@ -480,7 +480,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 				currentScn = rs.getLong("CURRENT_SCN");
 			}
 			if (currentScn != null) {
-				if (System.currentTimeMillis() - time > 24*60*60*1000) {
+				if (System.currentTimeMillis() - time > 4*60*60*1000) {
 					currentScn = null;
 				}
 			}
