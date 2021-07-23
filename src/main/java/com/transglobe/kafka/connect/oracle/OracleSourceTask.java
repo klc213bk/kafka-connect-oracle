@@ -14,6 +14,8 @@ import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.ORA_DESU
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.POSITION_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.ROWID_POSITION_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.ROW_ID_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.RS_ID_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SSN_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SCN_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SEG_OWNER_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SQL_REDO_FIELD;
@@ -239,6 +241,8 @@ public class OracleSourceTask extends SourceTask {
           if (log.isDebugEnabled()) {
             logRawMinerData();
           }
+          String rsId=logMinerData.getString(RS_ID_FIELD);
+          Long ssn=logMinerData.getLong(SSN_FIELD);
           Long scn=logMinerData.getLong(SCN_FIELD);
           Long commitScn=logMinerData.getLong(COMMIT_SCN_FIELD);
           String rowId=logMinerData.getString(ROW_ID_FIELD);
@@ -270,7 +274,7 @@ public class OracleSourceTask extends SourceTask {
           sqlX=sqlRedo;        
           Timestamp timeStamp=logMinerData.getTimestamp(TIMESTAMP_FIELD);
 
-          Data row = new Data(scn, segOwner, segName, sqlRedo,timeStamp,operation);
+          Data row = new Data(rsId, ssn, scn, segOwner, segName, sqlRedo,timeStamp,operation);
 //          topic = config.getTopic().equals("") ? (config.getDbNameAlias()+DOT+row.getSegOwner()+DOT+(operation.equals(OPERATION_DDL) ? DDL_TOPIC_POSTFIX : segName)).toUpperCase() : topic;
           topic = config.getTopic().equals("") ? ("etl"+DOT+row.getSegOwner()+DOT+(operation.equals(OPERATION_DDL) ? DDL_TOPIC_POSTFIX : segName)).toUpperCase() : topic;
           topic = topic.toLowerCase();
