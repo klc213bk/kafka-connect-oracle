@@ -274,7 +274,7 @@ public class OracleSourceTask extends SourceTask {
           sqlX=sqlRedo;        
           Timestamp timeStamp=logMinerData.getTimestamp(TIMESTAMP_FIELD);
 
-          Data row = new Data(rsId, ssn, scn, segOwner, segName, sqlRedo,timeStamp,operation);
+          Data row = new Data(rsId, ssn, scn, commitScn, rowId, segOwner, segName, sqlRedo,timeStamp,operation);
 //          topic = config.getTopic().equals("") ? (config.getDbNameAlias()+DOT+row.getSegOwner()+DOT+(operation.equals(OPERATION_DDL) ? DDL_TOPIC_POSTFIX : segName)).toUpperCase() : topic;
           topic = config.getTopic().equals("") ? ("etl"+DOT+row.getSegOwner()+DOT+(operation.equals(OPERATION_DDL) ? DDL_TOPIC_POSTFIX : segName)).toUpperCase() : topic;
           topic = topic.toLowerCase();

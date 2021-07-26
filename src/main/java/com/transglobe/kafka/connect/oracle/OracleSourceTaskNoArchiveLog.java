@@ -4,6 +4,9 @@ import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.BEFORE_D
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DATA_ROW_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DOT;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.RS_ID_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SSN_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.COMMIT_SCN_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SCN_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SEG_OWNER_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SQL_REDO_FIELD;
@@ -337,7 +340,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 					sourceOffset.put("rowId", rowId);
 
 
-					Data row = new Data(rsId, ssn, scn, segOwner, tableName, sqlRedo, new Timestamp(timestamp.getTime()), operation);
+					Data row = new Data(rsId, ssn, scn, commitScn, rowId, segOwner, tableName, sqlRedo, new Timestamp(timestamp.getTime()), operation);
 
 					Schema schema = dataSchemaStruct.getDmlRowSchema();
 					Struct struct = setValueV2(row, dataSchemaStruct);
@@ -426,7 +429,10 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 	private Struct setValueV2(Data row,DataSchemaStruct dataSchemaStruct) {    
 		Struct valueStruct = new Struct(dataSchemaStruct.getDmlRowSchema())
+				.put(RS_ID_FIELD, row.getRsId())
+				.put(SSN_FIELD, row.getSsn())
 				.put(SCN_FIELD, row.getScn())
+				.put(COMMIT_SCN_FIELD, row.getCommitScn())
 				.put(SEG_OWNER_FIELD, row.getSegOwner())
 				.put(TABLE_NAME_FIELD, row.getSegName())
 				.put(TIMESTAMP_FIELD, row.getTimeStamp())

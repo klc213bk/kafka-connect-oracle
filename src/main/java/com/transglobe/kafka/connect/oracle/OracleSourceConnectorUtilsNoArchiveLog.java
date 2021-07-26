@@ -19,7 +19,10 @@ import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATIO
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_UPDATE;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPTIONAL_TIMESTAMP_SCHEMA;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.PK_COLUMN_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.RS_ID_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SSN_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SCN_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.COMMIT_SCN_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SEG_OWNER_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SQL_REDO_FIELD;
 import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TABLE_NAME_FIELD;
@@ -418,7 +421,10 @@ public class OracleSourceConnectorUtilsNoArchiveLog{
       }
       Schema newSchema = SchemaBuilder.struct()
                   .name(preSchemaName)
+                  .field(RS_ID_FIELD, Schema.STRING_SCHEMA)
+                  .field(SSN_FIELD, Schema.INT64_SCHEMA)
                   .field(SCN_FIELD, Schema.INT64_SCHEMA)
+                  .field(COMMIT_SCN_FIELD, Schema.INT64_SCHEMA)
                   .field(SEG_OWNER_FIELD, Schema.STRING_SCHEMA)
                   .field(TABLE_NAME_FIELD,Schema.STRING_SCHEMA)
                   .field(TIMESTAMP_FIELD,org.apache.kafka.connect.data.Timestamp.SCHEMA)
