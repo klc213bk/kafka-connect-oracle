@@ -16,6 +16,7 @@ import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TIMESTAM
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.Date;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -446,7 +447,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 	private Long getCurrentScn() throws SQLException {
 
-		Long registerdCurrentScn = getLegalRegisteredCurrentScn();
+		Long registerdCurrentScn = getRegisteredCurrentScn();
 		if (registerdCurrentScn != null) {
 			return registerdCurrentScn;
 		} else {
@@ -474,31 +475,27 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 	private String getTopicName(OracleSourceConnectorConfigNoArchiveLog config, String tableName) {
 		return config.getTopicPattern().replace("%tablename%", StringUtils.lowerCase(tableName));
 	}
-	private Long getLegalRegisteredCurrentScn() throws SQLException {
-		Statement stmt = null;
+	private Long getRegisteredCurrentScn() throws SQLException {
+		PreparedStatement pstmt = null;
 		ResultSet rs = null;
 		String sql = "";
-		Long currentScn = null;
+		Long scn = null;
 		try {
-			sql = "select TIME, CURRENT_SCN from t_streaming_register order by time desc fetch next 1 row only";
-			stmt = dbConn.createStatement();
-			rs = stmt.executeQuery(sql);
+			sql = "select SCN from T_LOGMINER_SCN where STREAMING_NAME=?";
+			pstmt = dbConn.prepareStatement(sql);
+			pstmt.setString(1, config.getStreamingName());
+			
+			rs = pstmt.executeQuery();
 			long time = 0;
 			while (rs.next()) {
-				time = rs.getLong("TIME");
-				currentScn = rs.getLong("CURRENT_SCN");
-			}
-			if (currentScn != null) {
-				if (System.currentTimeMillis() - time > 4*60*60*1000) {
-					currentScn = null;
-				}
+				scn = rs.getLong("SCN");
 			}
 
 		} finally {
 			if (rs != null) rs.close();
-			if (stmt != null) stmt.close();
+			if (pstmt != null) pstmt.close();
 		}
 
-		return currentScn;
+		return scn;
 	}
 }
