@@ -448,6 +448,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 	private Long getCurrentScn() throws SQLException {
 
 		Long registerdCurrentScn = getRegisteredCurrentScn();
+		log.info(">>>registerdCurrentScn={}", registerdCurrentScn);
 		if (registerdCurrentScn != null) {
 			return registerdCurrentScn;
 		} else {
@@ -461,6 +462,7 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 				while (rs.next()) {
 					currentScn = rs.getLong("CURRENT_SCN");
 				}
+				log.info(">>>gv$database currentScn={}", currentScn);
 			} finally {
 				if (rs != null) rs.close();
 				if (stmt != null) stmt.close();
