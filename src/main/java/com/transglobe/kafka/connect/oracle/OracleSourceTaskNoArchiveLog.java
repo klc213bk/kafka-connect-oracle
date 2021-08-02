@@ -488,7 +488,6 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 			pstmt.setString(1, config.getStreamingName());
 			
 			rs = pstmt.executeQuery();
-			long time = 0;
 			while (rs.next()) {
 				scn = rs.getLong("SCN");
 			}
