@@ -132,92 +132,85 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 		ResultSet resultSet = null;
 		try {
 
-			//			log.info(">>>>>>>>> sstreamOffsetScn={}, treamOffsetCommitScn={}", streamOffsetScn, streamOffsetCommitScn);  
+			log.info(">>>>>>>>> poll with treamOffsetCommitScn={}", streamOffsetCommitScn);  
 
-			cstmt = dbConn.prepareCall("{ call LOGMINER_NOARCHIVE_SP(?,?,?,?,?) }");
-			cstmt.setLong(1, streamOffsetScn);
-			cstmt.setLong(2, streamOffsetCommitScn);
-			cstmt.setString(3, config.getTableWhiteList());
-			cstmt.registerOutParameter(4, Types.BIGINT);
-
-			// alternative
-			//cstmt.registerOutParameter(5, Types.REF_CURSOR);
-			cstmt.registerOutParameter(5, OracleTypes.CURSOR);
+			cstmt = dbConn.prepareCall("{ call LOGMINER_NOARCHIVE_SP(?,?,?) }");
+			cstmt.setLong(1, streamOffsetCommitScn);
+			cstmt.setString(2, config.getTableWhiteList());
+			cstmt.registerOutParameter(3, OracleTypes.CURSOR);
 
 			cstmt.execute();
 
-			Long currentScn = cstmt.getLong(4);
-			//			log.info(">>>>>>>>> currentScn={}", currentScn);
+			resultSet = (ResultSet) cstmt.getObject(3);
 
-			resultSet = (ResultSet) cstmt.getObject(5);
-
-			Long threadNum;
+//			Long threadNum;
 			Long scn;
 			Long commitScn;
-			Long startScn;
-			String xid;
+//			Long startScn;
+//			String xid;
 			Date timestamp;
 			Date commitTimestamp;
 			Integer operationCode;
 			String operation;
-			Integer status; 
+//			Integer status; 
 			String segTypeName;
-			String info;
-			Integer rollback;
+//			String info;
+//			Integer rollback;
 			String segOwner;
 			String segName;
 			String tableName;
-			String username;
+//			String username;
 			String sqlRedo;
 			String rowId;
 			Integer csf;
-			String tableSpace;
-			String sessionInfo;
+//			String tableSpace;
+//			String sessionInfo;
 			String rsId;
 			Long ssn = 0L;
-			Long rbasqn;
-			Long rbablk;
-			Long sequenceNum;
-			String txName;
+//			Long rbasqn;
+//			Long rbablk;
+//			Long sequenceNum;
+//			String txName;
+			Timestamp insertTimestamp;
 
 			//			Map<String, Map<String, Object>> sqlRedoKeepMap = null;
 
 			int count = 0;
 			while (resultSet.next()) {
 				count++;
-				log.info(">>>>>>>>> count={}, streamOffsetScn={}, treamOffsetCommitScn={}", count, streamOffsetScn, streamOffsetCommitScn);  
+				log.info(">>>>>>>>> count={}", count, streamOffsetCommitScn);  
 
 				Map<String, Object> data = new HashMap<>();
 				try {
-					threadNum = resultSet.getLong("THREAD#");
+//					threadNum = resultSet.getLong("THREAD#");
 					scn = resultSet.getLong("SCN");
 					commitScn = resultSet.getLong("COMMIT_SCN");
-					startScn = resultSet.getLong("START_SCN");
-					xid = resultSet.getString("XID");
+//					startScn = resultSet.getLong("START_SCN");
+//					xid = resultSet.getString("XID");
 					timestamp = resultSet.getDate("TIMESTAMP");
 					commitTimestamp = resultSet.getDate("COMMIT_TIMESTAMP");
 					operationCode = resultSet.getInt("OPERATION_CODE");
 					operation = resultSet.getString("OPERATION");
-					status = resultSet.getInt("STATUS");; 
+//					status = resultSet.getInt("STATUS");; 
 					segTypeName = resultSet.getString("SEG_TYPE_NAME");
-					info = resultSet.getString("INFO");
-					rollback = resultSet.getInt("ROLLBACK");
+//					info = resultSet.getString("INFO");
+//					rollback = resultSet.getInt("ROLLBACK");
 					segOwner = resultSet.getString("SEG_OWNER");
 					segName = resultSet.getString("SEG_NAME");//
 					tableName = resultSet.getString("TABLE_NAME");
-					username = resultSet.getString("USERNAME");//
+//					username = resultSet.getString("USERNAME");//
 					sqlRedo = resultSet.getString("SQL_REDO");
 					rowId = resultSet.getString("ROW_ID");
 					csf = resultSet.getInt("CSF");
-					tableSpace = resultSet.getString("TABLE_SPACE");//
-					sessionInfo = resultSet.getString("SESSION_INFO");//
+//					tableSpace = resultSet.getString("TABLE_SPACE");//
+//					sessionInfo = resultSet.getString("SESSION_INFO");//
 					rsId = resultSet.getString("RS_ID");//
 					ssn = resultSet.getLong("SSN");//
-					rbasqn = resultSet.getLong("RBASQN");//
-					rbablk = resultSet.getLong("RBABLK");//
-					sequenceNum = resultSet.getLong("SEQUENCE#");//
-					txName = resultSet.getString("TX_NAME");//
-
+//					rbasqn = resultSet.getLong("RBASQN");//
+//					rbablk = resultSet.getLong("RBABLK");//
+//					sequenceNum = resultSet.getLong("SEQUENCE#");//
+//					txName = resultSet.getString("TX_NAME");//
+					insertTimestamp = resultSet.getTimestamp("INSERT_TIMESTAMP");
 
 					if (operation.equals("DDL")) {
 						commitScn = 0L;
@@ -228,34 +221,35 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 					topic = config.getTopic().equals("") ? getTopicName(config, tableName) : config.getTopic();
 
-					data.put("threadNum", threadNum);
+//					data.put("threadNum", threadNum);
 					data.put("scn", scn);
 					data.put("commitScn", commitScn);
-					data.put("startScn", startScn);
-					data.put("xid", xid);
+//					data.put("startScn", startScn);
+//					data.put("xid", xid);
 					data.put("timestamp", timestamp);
 					data.put("commitTimestamp", commitTimestamp);
 					data.put("operationCode", operationCode);
 					data.put("operation", operation);
-					data.put("status", status);
+//					data.put("status", status);
 					data.put("segTypeName", segTypeName);
-					data.put("info", info);
-					data.put("rollback",rollback);
+//					data.put("info", info);
+//					data.put("rollback",rollback);
 					data.put("segOwner", segOwner);
 					data.put("segName", segName);
 					data.put("tableName", tableName);
-					data.put("username", username);
+//					data.put("username", username);
 					data.put("sqlRedo", sqlRedo);
 					data.put("rowId", rowId);
 					data.put("csf", csf);
-					data.put("tableSpace", tableSpace);
-					data.put("sessionInfo", sessionInfo);
+//					data.put("tableSpace", tableSpace);
+//					data.put("sessionInfo", sessionInfo);
 					data.put("rsId", rsId);
 					data.put("ssn", ssn);
-					data.put("rbasqn", rbasqn);
-					data.put("rbablk",rbablk);
-					data.put("sequenceNum",sequenceNum);
-					data.put("txName", txName); 
+//					data.put("rbasqn", rbasqn);
+//					data.put("rbablk",rbablk);
+//					data.put("sequenceNum",sequenceNum);
+//					data.put("txName", txName); 
+					data.put("insertTimestamp", insertTimestamp);
 
 					data.put("topic", topic);
 
@@ -354,24 +348,15 @@ public class OracleSourceTaskNoArchiveLog extends SourceTask {
 
 					//				log.info(">>>>>>>>> return records={}", records);   
 
-					streamOffsetScn = scn;			
-					if (operation.equals("DDL")) {
-						streamOffsetCommitScn = scn;
-					} else {
-						streamOffsetCommitScn = commitScn;
-					}
+					streamOffsetCommitScn = commitScn;
+
 				} catch (Exception e) {
 					log.error(">>>>>>>>> Error:" + ExceptionUtils.getStackTrace(e));
 				} 
 
 			}
-			if (count == 0) {
-				streamOffsetCommitScn = currentScn;
-			} else {
-
-				streamOffsetCommitScn++;
-			}
-
+			dbConn.commit();
+			
 			return records;
 
 		} catch (Exception e) {
